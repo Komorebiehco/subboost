@@ -66,14 +66,14 @@ export function SourceEditorDialog({
               <p className="text-xs text-white/60">{sourceTypeInfo[source.type].label}</p>
               {source.type === "url" ? (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <Input
                       value={source.content}
                       onChange={(event) => onUpdateContent(source.id, event.target.value)}
                       placeholder={sourceTypeInfo[source.type].placeholder}
-                      className="min-w-0 flex-1 text-xs"
+                      className="w-full min-w-0 flex-1 text-xs"
                     />
-                    <div className="flex h-10 flex-none items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3">
+                    <div className="flex h-10 w-full flex-none items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/5 px-3 sm:w-auto sm:justify-start">
                       <span className="whitespace-nowrap text-xs text-white/70">proxy-providers模式</span>
                       <HelpPopover
                         label="proxy-providers 模式说明"
