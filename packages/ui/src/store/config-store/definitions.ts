@@ -76,6 +76,8 @@ export interface SubscriptionSource {
   nameTemplate?: string;
   // URL 源使用 proxy-providers 模式：不在 SubBoost 内拉取/解析节点，仅在最终配置中写入 proxy-providers 供客户端拉取
   useProxyProviders?: boolean;
+  // proxy-provider 拉取订阅时使用的 User-Agent；留空时使用生成器默认值
+  proxyProviderUserAgent?: string;
   // 独立的流量/到期元信息 URL（可选）
   userinfoUrl?: string;
   // 获取流量/到期元信息时使用的自定义 User-Agent（可选）

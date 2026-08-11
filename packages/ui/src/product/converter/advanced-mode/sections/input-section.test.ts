@@ -322,6 +322,7 @@ describe("advanced mode InputSection", () => {
         tag: "OLD",
         nameTemplate: "old",
         useProxyProviders: true,
+        proxyProviderUserAgent: "old",
         userinfoUrl: "old",
         userinfoUserAgent: "old",
       },
@@ -340,6 +341,7 @@ describe("advanced mode InputSection", () => {
         tag: "HK",
         nameTemplate: "[{tag}] {name}",
         useProxyProviders: false,
+        proxyProviderUserAgent: "",
         userinfoUrl: "https://example.com/userinfo",
         userinfoUserAgent: "clash",
       },
@@ -367,11 +369,12 @@ describe("advanced mode InputSection", () => {
       tag: "HK",
       nameTemplate: "[{tag}] {name}",
       useProxyProviders: false,
+      proxyProviderUserAgent: "",
       userinfoUrl: "https://example.com/userinfo",
       userinfoUserAgent: "clash",
     });
 
-    const existingSnapshot = { id: "s1", content: "same", tag: "", nameTemplate: "", useProxyProviders: false, userinfoUrl: "", userinfoUserAgent: "" };
+    const existingSnapshot = { id: "s1", content: "same", tag: "", nameTemplate: "", useProxyProviders: false, proxyProviderUserAgent: "", userinfoUrl: "", userinfoUserAgent: "" };
     renderSection({ 1: "s1", 2: existingSnapshot });
     expect((stateMock.setters[2] as any).lastValue).toBe(existingSnapshot);
 
@@ -391,6 +394,7 @@ describe("advanced mode InputSection", () => {
       tag: "",
       nameTemplate: "",
       useProxyProviders: false,
+      proxyProviderUserAgent: "",
       userinfoUrl: "",
       userinfoUserAgent: "",
     });

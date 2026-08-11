@@ -350,6 +350,9 @@ export function useSubscriptionLink({
                     ? { subscriptionUserInfo: sourceSubscriptionUserInfo }
                     : {}),
                   ...(s.type === "url" && s.useProxyProviders ? { useProxyProviders: true } : {}),
+                  ...(s.type === "url" && typeof s.proxyProviderUserAgent === "string" && s.proxyProviderUserAgent.trim()
+                    ? { proxyProviderUserAgent: s.proxyProviderUserAgent.trim() }
+                    : {}),
                   ...(s.type === "url" && typeof s.userinfoUrl === "string" && s.userinfoUrl.trim()
                     ? { userinfoUrl: tryNormalizeSubscriptionUrlInput(s.userinfoUrl) ?? s.userinfoUrl.trim() }
                     : {}),

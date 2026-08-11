@@ -253,6 +253,7 @@ describe("useSubscriptionLink", () => {
             sources: [
               expect.objectContaining({
                 content: "https://airport.example/sub",
+                proxyProviderUserAgent: "FlClash/0.8.92",
                 userinfoUrl: "https://airport.example/userinfo",
                 userinfoUserAgent: "Clash.Meta",
                 subscriptionUserInfo: { upload: 2_048, download: 1_024, total: 4_096 },
@@ -310,6 +311,7 @@ describe("useSubscriptionLink", () => {
         tag: " Provider ",
         nameTemplate: " {name} ",
         useProxyProviders: true,
+        proxyProviderUserAgent: " FlClash/0.8.92 ",
         lastParsedContent: " https://provider.example/parsed ",
         lastParsedTag: " Last ",
         lastParsedNameTemplate: " {tag}-{name} ",
@@ -345,6 +347,7 @@ describe("useSubscriptionLink", () => {
                 tag: "Provider",
                 nameTemplate: "{name}",
                 useProxyProviders: true,
+                proxyProviderUserAgent: "FlClash/0.8.92",
                 lastParsedContent: "https://provider.example/parsed",
                 lastParsedTag: "Last",
                 lastParsedNameTemplate: "{tag}-{name}",

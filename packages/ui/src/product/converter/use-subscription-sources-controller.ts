@@ -19,6 +19,7 @@ type ExpandedSourceSnapshot = {
   tag: string;
   nameTemplate: string;
   useProxyProviders: boolean;
+  proxyProviderUserAgent: string;
   userinfoUrl: string;
   userinfoUserAgent: string;
 };
@@ -34,6 +35,7 @@ function createExpandedSourceSnapshot(source: SubscriptionSource): ExpandedSourc
     tag: (source.tag ?? "").trim(),
     nameTemplate: (source.nameTemplate ?? "").trim(),
     useProxyProviders: Boolean(source.useProxyProviders),
+    proxyProviderUserAgent: (source.proxyProviderUserAgent ?? "").trim(),
     userinfoUrl: (source.userinfoUrl ?? "").trim(),
     userinfoUserAgent: (source.userinfoUserAgent ?? "").trim(),
   };
@@ -46,6 +48,7 @@ function changedSinceSnapshot(source: SubscriptionSource, snapshot: ExpandedSour
     next.tag !== snapshot.tag ||
     next.nameTemplate !== snapshot.nameTemplate ||
     next.useProxyProviders !== snapshot.useProxyProviders ||
+    next.proxyProviderUserAgent !== snapshot.proxyProviderUserAgent ||
     next.userinfoUrl !== snapshot.userinfoUrl ||
     next.userinfoUserAgent !== snapshot.userinfoUserAgent
   );
@@ -56,6 +59,7 @@ function sourceMetaNeedsReimport(patch: Partial<SubscriptionSource>): boolean {
     Object.prototype.hasOwnProperty.call(patch, "tag") ||
     Object.prototype.hasOwnProperty.call(patch, "nameTemplate") ||
     Object.prototype.hasOwnProperty.call(patch, "useProxyProviders") ||
+    Object.prototype.hasOwnProperty.call(patch, "proxyProviderUserAgent") ||
     Object.prototype.hasOwnProperty.call(patch, "userinfoUrl") ||
     Object.prototype.hasOwnProperty.call(patch, "userinfoUserAgent")
   );
@@ -236,6 +240,7 @@ export function useSubscriptionSourcesController({ mode }: Options) {
             type,
             content: "",
             useProxyProviders: type === "url" ? Boolean(source.useProxyProviders) : undefined,
+            proxyProviderUserAgent: type === "url" ? source.proxyProviderUserAgent : undefined,
             userinfoUrl: type === "url" ? source.userinfoUrl : undefined,
             userinfoUserAgent: type === "url" ? source.userinfoUserAgent : undefined,
             lastParsedContent: undefined,

@@ -1,5 +1,7 @@
 import { tryNormalizeSubscriptionUrlInput } from "@subboost/core/subscription/url-input";
 
+export const DEFAULT_PROXY_PROVIDER_USER_AGENT = "Clash.Meta/1.19.24";
+
 /**
  * 从订阅的结构化配置里提取 proxy-providers（proxy-providers模式）。
  *
@@ -44,10 +46,17 @@ export function buildProxyProvidersFromConfig(
     const safeId = id.replace(/[^a-zA-Z0-9_-]/g, "_");
     const name = `url_${safeId}`;
     if (Object.prototype.hasOwnProperty.call(out, name)) continue;
+    const proxyProviderUserAgent =
+      typeof item.proxyProviderUserAgent === "string" && item.proxyProviderUserAgent.trim()
+        ? item.proxyProviderUserAgent.trim()
+        : DEFAULT_PROXY_PROVIDER_USER_AGENT;
 
     out[name] = {
       type: "http",
       url,
+      header: {
+        "User-Agent": [proxyProviderUserAgent],
+      },
       interval: 3600,
       path: `./proxy_providers/${name}.yaml`,
       "health-check": {

@@ -70,6 +70,7 @@ function sourceArray(value: unknown): SubscriptionSource[] | undefined {
       ...(typeof item.tag === "string" ? { tag: item.tag } : {}),
       ...(typeof item.nameTemplate === "string" ? { nameTemplate: item.nameTemplate } : {}),
       ...(typeof item.useProxyProviders === "boolean" ? { useProxyProviders: item.useProxyProviders } : {}),
+      ...(typeof item.proxyProviderUserAgent === "string" ? { proxyProviderUserAgent: item.proxyProviderUserAgent } : {}),
       ...(typeof item.userinfoUrl === "string" ? { userinfoUrl: item.userinfoUrl } : {}),
       ...(typeof item.userinfoUserAgent === "string" ? { userinfoUserAgent: item.userinfoUserAgent } : {}),
       ...(typeof item.parsed === "boolean" ? { parsed: item.parsed } : {}),

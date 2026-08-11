@@ -2,6 +2,7 @@
 
 import { HelpCircle } from "lucide-react";
 import { DEFAULT_NODE_NAME_TEMPLATE } from "@subboost/core/node-name-template";
+import { DEFAULT_PROXY_PROVIDER_USER_AGENT } from "@subboost/core/subscription/proxy-providers";
 import { Button } from "@subboost/ui/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@subboost/ui/components/ui/dialog";
 import { FormField } from "@subboost/ui/components/ui/form-field";
@@ -110,6 +111,17 @@ export function SourceEditorDialog({
                       />
                     </div>
                   </div>
+
+                  {source.useProxyProviders ? (
+                    <FormField label="proxy-provider User-Agent">
+                      <Input
+                        value={source.proxyProviderUserAgent ?? ""}
+                        onChange={(event) => onUpdateMeta(source.id, { proxyProviderUserAgent: event.target.value })}
+                        placeholder={DEFAULT_PROXY_PROVIDER_USER_AGENT}
+                        className="text-xs font-mono"
+                      />
+                    </FormField>
+                  ) : null}
 
                   <div className="grid gap-3 sm:grid-cols-2">
                     <FormField label="流量/到期信息 URL（可选）">

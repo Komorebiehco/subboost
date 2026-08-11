@@ -10,6 +10,7 @@ describe("normalizeSavedSourcesForPersistence", () => {
           type: "url",
           content: " https://example.com/sub&token=abc ",
           useProxyProviders: true,
+          proxyProviderUserAgent: " FlClash/0.8.92 ",
           userinfoUrl: " https://info.example/user&token=abc ",
           userinfoUserAgent: " LocalAgent/1.0 ",
           subscriptionUserInfo: {
@@ -31,6 +32,7 @@ describe("normalizeSavedSourcesForPersistence", () => {
         type: "url",
         content: "https://example.com/sub?token=abc",
         useProxyProviders: true,
+        proxyProviderUserAgent: "FlClash/0.8.92",
         userinfoUrl: "https://info.example/user?token=abc",
         userinfoUserAgent: "LocalAgent/1.0",
         subscriptionUserInfo: {

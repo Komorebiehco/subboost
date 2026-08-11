@@ -1,43 +1,9 @@
 import { generateClashYaml } from "@subboost/core/generator";
 import { stripImportedNodeControlFieldsFromList } from "@subboost/core/subscription/imported-node-controls";
 import { resolveNodeNameFilter } from "@subboost/core/subscription/node-name-filter";
+import { buildProxyProvidersFromConfig } from "@subboost/core/subscription/proxy-providers";
 import type { ParsedNode } from "@subboost/core/types/node";
 import type { ConfigState } from "./definitions";
-
-function buildProxyProvidersFromSources(
-  state: ConfigState
-): Record<string, unknown> | undefined {
-  const out: Record<string, unknown> = {};
-
-  for (const source of state.sources) {
-    if (!source || source.type !== "url" || !source.useProxyProviders) continue;
-    const url = typeof source.content === "string" ? source.content.trim() : "";
-    if (!url) continue;
-
-    let parsed: URL;
-    try {
-      parsed = new URL(url);
-    } catch {
-      continue;
-    }
-    if (!["http:", "https:"].includes(parsed.protocol)) continue;
-
-    const name = `url_${source.id}`;
-    out[name] = {
-      type: "http",
-      url,
-      interval: 3600,
-      path: `./proxy_providers/${name}.yaml`,
-      "health-check": {
-        enable: true,
-        url: state.testUrl,
-        interval: state.testInterval,
-      },
-    };
-  }
-
-  return Object.keys(out).length > 0 ? out : undefined;
-}
 
 export type GeneratedYamlResult = {
   yaml: string;
@@ -87,7 +53,10 @@ function buildGenerateClashYamlOptions(
 }
 
 export function computeGeneratedYamlResult(state: ConfigState): GeneratedYamlResult {
-  const proxyProviders = buildProxyProvidersFromSources(state);
+  const proxyProviders = buildProxyProvidersFromConfig(
+    { sources: state.sources },
+    { testUrl: state.testUrl, testInterval: state.testInterval }
+  );
 
   try {
     const { effectiveNodes } = resolveNodeNameFilter(state.nodes, state.nodeNameFilter);

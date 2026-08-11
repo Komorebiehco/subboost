@@ -88,6 +88,9 @@ describe("computeGeneratedYamlResult", () => {
           "url_source-1": {
             type: "http",
             url: "https://example.com/sub.yaml",
+            header: {
+              "User-Agent": ["Clash.Meta/1.19.24"],
+            },
             interval: 3600,
             path: "./proxy_providers/url_source-1.yaml",
             "health-check": {

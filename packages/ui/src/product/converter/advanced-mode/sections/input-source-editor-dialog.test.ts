@@ -78,7 +78,8 @@ const urlSource = {
   content: "https://example.com/sub",
   tag: "A",
   nameTemplate: "{tag}-{name}",
-  useProxyProviders: false,
+  useProxyProviders: true,
+  proxyProviderUserAgent: "FlClash/0.8.92",
   userinfoUrl: "https://example.com/userinfo",
   userinfoUserAgent: "Clash.Meta",
 };
@@ -125,19 +126,26 @@ describe("InputSourceEditorDialog", () => {
     expect(html).toContain("高级编辑：订阅链接");
     expect(html).toContain("proxy-providers模式");
     expect(html).toContain("proxy-providers 模式");
+    expect(html).toContain("proxy-provider User-Agent");
     expect(html).toContain("subscription-userinfo");
 
     mocks.inputs[0].onChange({ target: { value: "B" } });
     mocks.inputs[1].onChange({ target: { value: "{name}" } });
     expect(mocks.inputs[2]).toEqual(expect.objectContaining({ value: "A-Node", readOnly: true }));
     mocks.inputs[3].onChange({ target: { value: "https://next.example/sub" } });
-    mocks.inputs[4].onChange({ target: { value: "https://next.example/userinfo" } });
-    mocks.inputs[5].onChange({ target: { value: "Meta" } });
+    expect(mocks.inputs[4]).toEqual(expect.objectContaining({
+      value: "FlClash/0.8.92",
+      placeholder: "Clash.Meta/1.19.24",
+    }));
+    mocks.inputs[4].onChange({ target: { value: "Clash.Meta/1.19.24" } });
+    mocks.inputs[5].onChange({ target: { value: "https://next.example/userinfo" } });
+    mocks.inputs[6].onChange({ target: { value: "Meta" } });
     mocks.switches[0].onCheckedChange(true);
 
     expect(handlers.onUpdateMeta).toHaveBeenCalledWith("source-url", { tag: "B" });
     expect(handlers.onUpdateMeta).toHaveBeenCalledWith("source-url", { nameTemplate: "{name}" });
     expect(handlers.onUpdateContent).toHaveBeenCalledWith("source-url", "https://next.example/sub");
+    expect(handlers.onUpdateMeta).toHaveBeenCalledWith("source-url", { proxyProviderUserAgent: "Clash.Meta/1.19.24" });
     expect(handlers.onUpdateMeta).toHaveBeenCalledWith("source-url", { userinfoUrl: "https://next.example/userinfo" });
     expect(handlers.onUpdateMeta).toHaveBeenCalledWith("source-url", { userinfoUserAgent: "Meta" });
     expect(handlers.onUpdateMeta).toHaveBeenCalledWith("source-url", { useProxyProviders: true });
