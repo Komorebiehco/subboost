@@ -12,6 +12,7 @@ export type SavedSource = {
   type: SavedSourceType;
   content: string;
   useProxyProviders?: boolean;
+  sourceUserAgent?: string;
   proxyProviderUserAgent?: string;
   userinfoUrl?: string;
   userinfoUserAgent?: string;
@@ -78,6 +79,7 @@ export function normalizeSavedSourcesForPersistence(
     content: string,
     preferredId?: string
   ): SavedSource => {
+    const sourceUserAgent = toTrimmedString(record.sourceUserAgent);
     const proxyProviderUserAgent = toTrimmedString(record.proxyProviderUserAgent);
     const userinfoUrl = toTrimmedString(record.userinfoUrl);
     const userinfoUserAgent = toTrimmedString(record.userinfoUserAgent);
@@ -93,6 +95,7 @@ export function normalizeSavedSourcesForPersistence(
       type,
       content: type === "url" ? normalizeUrlContent(content) : content,
       ...(type === "url" && record.useProxyProviders === true ? { useProxyProviders: true } : {}),
+      ...(type === "url" && sourceUserAgent ? { sourceUserAgent } : {}),
       ...(type === "url" && proxyProviderUserAgent ? { proxyProviderUserAgent } : {}),
       ...(type === "url" && userinfoUrl ? { userinfoUrl: normalizeUrlContent(userinfoUrl) } : {}),
       ...(type === "url" && userinfoUserAgent ? { userinfoUserAgent } : {}),

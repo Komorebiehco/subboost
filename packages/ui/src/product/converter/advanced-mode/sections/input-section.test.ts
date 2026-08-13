@@ -304,9 +304,10 @@ describe("advanced mode InputSection", () => {
 
     mocks.markSourceAsPendingImport.mockClear();
     mocks.captures.editor.onUpdateMeta("s1", { nameTemplate: "{name}", useProxyProviders: true });
+    mocks.captures.editor.onUpdateMeta("s1", { sourceUserAgent: "Clash.Meta/1.19.24" });
     mocks.captures.editor.onUpdateMeta("s1", { userinfoUrl: "https://meta.example/info" });
     mocks.captures.editor.onUpdateMeta("s1", { userinfoUserAgent: "mihomo" });
-    expect(mocks.markSourceAsPendingImport).toHaveBeenCalledTimes(3);
+    expect(mocks.markSourceAsPendingImport).toHaveBeenCalledTimes(4);
 
     mocks.markSourceAsPendingImport.mockClear();
     mocks.captures.editor.onUpdateMeta("s1", { nodeCount: 9 });
@@ -322,6 +323,7 @@ describe("advanced mode InputSection", () => {
         tag: "OLD",
         nameTemplate: "old",
         useProxyProviders: true,
+        sourceUserAgent: "old",
         proxyProviderUserAgent: "old",
         userinfoUrl: "old",
         userinfoUserAgent: "old",
@@ -341,6 +343,7 @@ describe("advanced mode InputSection", () => {
         tag: "HK",
         nameTemplate: "[{tag}] {name}",
         useProxyProviders: false,
+        sourceUserAgent: "",
         proxyProviderUserAgent: "",
         userinfoUrl: "https://example.com/userinfo",
         userinfoUserAgent: "clash",
@@ -369,12 +372,13 @@ describe("advanced mode InputSection", () => {
       tag: "HK",
       nameTemplate: "[{tag}] {name}",
       useProxyProviders: false,
+      sourceUserAgent: "",
       proxyProviderUserAgent: "",
       userinfoUrl: "https://example.com/userinfo",
       userinfoUserAgent: "clash",
     });
 
-    const existingSnapshot = { id: "s1", content: "same", tag: "", nameTemplate: "", useProxyProviders: false, proxyProviderUserAgent: "", userinfoUrl: "", userinfoUserAgent: "" };
+    const existingSnapshot = { id: "s1", content: "same", tag: "", nameTemplate: "", useProxyProviders: false, sourceUserAgent: "", proxyProviderUserAgent: "", userinfoUrl: "", userinfoUserAgent: "" };
     renderSection({ 1: "s1", 2: existingSnapshot });
     expect((stateMock.setters[2] as any).lastValue).toBe(existingSnapshot);
 
@@ -394,6 +398,7 @@ describe("advanced mode InputSection", () => {
       tag: "",
       nameTemplate: "",
       useProxyProviders: false,
+      sourceUserAgent: "",
       proxyProviderUserAgent: "",
       userinfoUrl: "",
       userinfoUserAgent: "",

@@ -38,6 +38,7 @@ describe("local source import route", () => {
   it("uses the local direct import service", async () => {
     const response = await route.POST(jsonRequest({
       url: "https://example.com/sub.yaml",
+      sourceUserAgent: "Clash.Meta/1.19.24",
       userinfoUrl: "https://example.com/userinfo",
       userinfoUserAgent: "mihomo/1.19.24",
     }));
@@ -45,6 +46,7 @@ describe("local source import route", () => {
     expect(response.status).toBe(200);
     expect(importSourceUrlDirect).toHaveBeenCalledWith({
       url: "https://example.com/sub.yaml",
+      sourceUserAgent: "Clash.Meta/1.19.24",
       userinfoUrl: "https://example.com/userinfo",
       userinfoUserAgent: "mihomo/1.19.24",
     });
@@ -96,6 +98,7 @@ describe("local source import route", () => {
   it("normalizes optional userinfo fields and forwards import errors", async () => {
     let response = await route.POST(jsonRequest({
       url: " https://example.com/sub.yaml ",
+      sourceUserAgent: " ",
       userinfoUrl: " ",
       userinfoUserAgent: "",
     }));
@@ -103,6 +106,7 @@ describe("local source import route", () => {
     expect(response.status).toBe(200);
     expect(importSourceUrlDirect).toHaveBeenCalledWith({
       url: "https://example.com/sub.yaml",
+      sourceUserAgent: undefined,
       userinfoUrl: undefined,
       userinfoUserAgent: undefined,
     });

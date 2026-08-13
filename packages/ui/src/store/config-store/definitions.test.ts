@@ -94,6 +94,7 @@ describe("config store definitions", () => {
 
     await expect(
       fetchUrlContentInBrowser(" https://example.com/sub ", {
+        sourceUserAgent: " Clash.Meta/1.19.24 ",
         userinfoUrl: "https://example.com/userinfo",
         userinfoUserAgent: " Clash.Meta ",
       })
@@ -111,6 +112,7 @@ describe("config store definitions", () => {
     });
     expect(mocks.importSource).toHaveBeenCalledWith({
       url: "https://example.com/sub",
+      sourceUserAgent: "Clash.Meta/1.19.24",
       userinfoUrl: "https://example.com/userinfo",
       userinfoUserAgent: "Clash.Meta",
     });

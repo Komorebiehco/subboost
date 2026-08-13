@@ -8,6 +8,7 @@ import { readJsonResponse } from "./client-response";
 
 export type SourceImportRequest = {
   url: string;
+  sourceUserAgent?: string;
   userinfoUrl?: string;
   userinfoUserAgent?: string;
 };

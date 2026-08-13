@@ -36,6 +36,7 @@ export type SourceImportTransportResult = {
 
 export type SourceImportRequest = {
   url: string;
+  sourceUserAgent?: string;
   userinfoUrl?: string;
   userinfoUserAgent?: string;
 };
@@ -273,7 +274,11 @@ export async function importSubscriptionFromUrl(
 
   const timeoutMs = options.timeoutMs ?? 15000;
   const maxBytes = options.maxBytes ?? 10 * 1024 * 1024;
-  const userAgents = options.userAgents?.length ? options.userAgents : SUBSCRIPTION_IMPORT_USER_AGENTS;
+  const customUserAgent = request.sourceUserAgent?.trim();
+  const configuredUserAgents = options.userAgents?.length ? options.userAgents : SUBSCRIPTION_IMPORT_USER_AGENTS;
+  const userAgents = customUserAgent
+    ? [customUserAgent, ...configuredUserAgents.filter((userAgent) => userAgent !== customUserAgent)]
+    : configuredUserAgents;
   let best: ParsedAttempt | null = null;
 
   for (let index = 0; index < userAgents.length; index += 1) {

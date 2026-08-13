@@ -21,6 +21,26 @@ function ssLink(name = "SS Node"): string {
 }
 
 describe("importSubscriptionFromUrl", () => {
+  it("tries a custom source user agent before configured fallbacks", async () => {
+    const fetchText = vi.fn(async (request: SourceImportTransportRequest): Promise<SourceImportTransportResult> => {
+      if (request.userAgent === "Clash.Meta/1.19.24") {
+        return { ok: false, error: "HTTP 403", responseStatus: 403 };
+      }
+      return { ok: true, content: mihomoYaml, headers: { "content-type": "text/yaml" } };
+    });
+
+    const result = await importSubscriptionFromUrl(
+      { url: "https://example.com/sub.yaml", sourceUserAgent: " Clash.Meta/1.19.24 " },
+      { fetchText, userAgents: ["fallback-agent"] }
+    );
+
+    expect(result.ok).toBe(true);
+    expect(fetchText.mock.calls.map(([request]) => request.userAgent)).toEqual([
+      "Clash.Meta/1.19.24",
+      "fallback-agent",
+    ]);
+  });
+
   it("tries client user agents and keeps supplemental userinfo headers", async () => {
     const fetchText = vi.fn(async (request: SourceImportTransportRequest): Promise<SourceImportTransportResult> => {
       if (request.purpose === "userinfo") {

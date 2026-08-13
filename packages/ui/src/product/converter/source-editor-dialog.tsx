@@ -112,6 +112,15 @@ export function SourceEditorDialog({
                     </div>
                   </div>
 
+                  <FormField label="订阅请求 User-Agent（可选）">
+                    <Input
+                      value={source.sourceUserAgent ?? ""}
+                      onChange={(event) => onUpdateMeta(source.id, { sourceUserAgent: event.target.value })}
+                      placeholder={DEFAULT_PROXY_PROVIDER_USER_AGENT}
+                      className="text-xs font-mono"
+                    />
+                  </FormField>
+
                   {source.useProxyProviders ? (
                     <FormField label="proxy-provider User-Agent">
                       <Input

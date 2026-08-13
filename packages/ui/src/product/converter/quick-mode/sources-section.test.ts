@@ -310,6 +310,9 @@ describe("quick mode SourcesSection", () => {
     mocks.captures.editor.onUpdateMeta("s1", { useProxyProviders: true });
     expect(mocks.markSourceAsPendingImport).toHaveBeenCalledWith(expect.objectContaining({ useProxyProviders: true }));
 
+    mocks.captures.editor.onUpdateMeta("s1", { sourceUserAgent: "Clash.Meta/1.19.24" });
+    expect(mocks.markSourceAsPendingImport).toHaveBeenCalledWith(expect.objectContaining({ sourceUserAgent: "Clash.Meta/1.19.24" }));
+
     mocks.captures.editor.onUpdateMeta("s1", { userinfoUrl: "https://new.example/userinfo" });
     expect(mocks.markSourceAsPendingImport).toHaveBeenCalledWith(expect.objectContaining({ userinfoUrl: "https://new.example/userinfo" }));
 
@@ -326,6 +329,7 @@ describe("quick mode SourcesSection", () => {
         tag: "OLD",
         nameTemplate: "old",
         useProxyProviders: true,
+        sourceUserAgent: "old",
         proxyProviderUserAgent: "old",
         userinfoUrl: "old",
         userinfoUserAgent: "old",
@@ -345,6 +349,7 @@ describe("quick mode SourcesSection", () => {
         tag: "HK",
         nameTemplate: "[{tag}] {name}",
         useProxyProviders: false,
+        sourceUserAgent: "",
         proxyProviderUserAgent: "",
         userinfoUrl: "https://example.com/userinfo",
         userinfoUserAgent: "clash",

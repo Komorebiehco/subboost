@@ -76,6 +76,8 @@ export interface SubscriptionSource {
   nameTemplate?: string;
   // URL 源使用 proxy-providers 模式：不在 SubBoost 内拉取/解析节点，仅在最终配置中写入 proxy-providers 供客户端拉取
   useProxyProviders?: boolean;
+  // SubBoost 服务端抓取并解析订阅时优先使用的 User-Agent
+  sourceUserAgent?: string;
   // proxy-provider 拉取订阅时使用的 User-Agent；留空时使用生成器默认值
   proxyProviderUserAgent?: string;
   // 独立的流量/到期元信息 URL（可选）
@@ -96,7 +98,7 @@ export type { CustomProxyGroup };
 
 export async function fetchUrlContentInBrowser(
   url: string,
-  options?: { userinfoUrl?: string; userinfoUserAgent?: string }
+  options?: { sourceUserAgent?: string; userinfoUrl?: string; userinfoUserAgent?: string }
 ): Promise<{
   content: string;
   headers: Record<string, string>;
@@ -126,6 +128,9 @@ export async function fetchUrlContentInBrowser(
 
     const data = await sourceImport.importSource({
       url: normalizedUrl,
+      ...(typeof options?.sourceUserAgent === "string" && options.sourceUserAgent.trim()
+        ? { sourceUserAgent: options.sourceUserAgent.trim() }
+        : {}),
       ...(normalizedUserinfoUrl ? { userinfoUrl: normalizedUserinfoUrl } : {}),
       ...(typeof options?.userinfoUserAgent === "string" && options.userinfoUserAgent.trim()
         ? { userinfoUserAgent: options.userinfoUserAgent.trim() }
