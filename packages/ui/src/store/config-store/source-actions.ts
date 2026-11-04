@@ -22,6 +22,7 @@ import {
 } from "@subboost/core/subscription/import-error";
 import { stripImportedNodeControlFieldsFromList } from "@subboost/core/subscription/imported-node-controls";
 import { tryNormalizeSubscriptionUrlInput } from "@subboost/core/subscription/url-input";
+import { orderDialerGroupsByNodes, orderNodesBySources } from "@subboost/core/subscription/node-source-order";
 import type { ConfigActions, SubscriptionSource } from "./definitions";
 import {
   fetchUrlContentInBrowser,
@@ -97,7 +98,18 @@ export function createSourceActions(set: SetState, get: GetState, setAndGenerate
       const removed = new Set(Array.from(prevIds).filter((id) => !nextIds.has(id)));
 
       if (removed.size === 0) {
-        set({ sources });
+        if (prev.length === sources.length && prev.every((source, index) => source.id === sources[index].id)) {
+          set({ sources });
+          return;
+        }
+        setAndGenerateConfig((state) => {
+          const nodes = orderNodesBySources(state.nodes, sources);
+          return {
+            sources,
+            nodes,
+            dialerProxyGroups: orderDialerGroupsByNodes(state.dialerProxyGroups, nodes),
+          };
+        });
         return;
       }
 
@@ -108,7 +120,8 @@ export function createSourceActions(set: SetState, get: GetState, setAndGenerate
           if (next) nextNodes.push(next);
         }
 
-        const availableNames = new Set(nextNodes.map((n) => n.name));
+        const orderedNodes = orderNodesBySources(nextNodes, sources);
+        const availableNames = new Set(orderedNodes.map((n) => n.name));
         const nextListenerPorts: Record<string, number> = {};
         for (const [name, port] of Object.entries(state.listenerPorts)) {
           if (!availableNames.has(name)) continue;
@@ -120,9 +133,9 @@ export function createSourceActions(set: SetState, get: GetState, setAndGenerate
 
         return {
           sources,
-          nodes: nextNodes,
+          nodes: orderedNodes,
           listenerPorts: nextListenerPorts,
-          dialerProxyGroups: nextDialerProxyGroups,
+          dialerProxyGroups: orderDialerGroupsByNodes(nextDialerProxyGroups, orderedNodes),
         };
       });
     },
@@ -317,7 +330,7 @@ export function createSourceActions(set: SetState, get: GetState, setAndGenerate
             deletedNodes: state.deletedNodes,
           });
 
-          const nextNodes = merged.nodes;
+          const nextNodes = orderNodesBySources(merged.nodes, state.sources);
           const availableNames = new Set(nextNodes.map((n) => n.name));
           const nextListenerPorts: Record<string, number> = {};
           for (const [name, port] of Object.entries(state.listenerPorts)) {
@@ -355,7 +368,7 @@ export function createSourceActions(set: SetState, get: GetState, setAndGenerate
           return {
             nodes: nextNodes,
             listenerPorts: nextListenerPorts,
-            dialerProxyGroups: nextDialerProxyGroups,
+            dialerProxyGroups: orderDialerGroupsByNodes(nextDialerProxyGroups, nextNodes),
             sources: state.sources.map((s) =>
               s.id === sourceId
                 ? {
@@ -658,7 +671,7 @@ export function createSourceActions(set: SetState, get: GetState, setAndGenerate
           deletedNodeKeys.add(buildScopedNodeIdentityKey(origin, deletedNode));
         }
 
-        const normalized = normalizedCandidates
+        const normalized = orderNodesBySources(normalizedCandidates
           .filter((node) => {
             const record = node as unknown as Record<string, unknown>;
             const origin =
@@ -668,7 +681,7 @@ export function createSourceActions(set: SetState, get: GetState, setAndGenerate
             if (deletedNodeKeys.has(buildScopedNodeIdentityKey(origin, node))) return false;
             if ((originCounts.get(origin) ?? 0) > 1) return true;
             return !deleted.has(origin);
-          });
+          }), state.sources);
 
         const availableNames = new Set(normalized.map((n) => n.name));
         const nextListenerPorts: Record<string, number> = {};
@@ -684,7 +697,7 @@ export function createSourceActions(set: SetState, get: GetState, setAndGenerate
           parseErrors: allErrors,
           isLoading: false,
           listenerPorts: nextListenerPorts,
-          dialerProxyGroups: nextDialerProxyGroups,
+          dialerProxyGroups: orderDialerGroupsByNodes(nextDialerProxyGroups, normalized),
           sources: state.sources.map((s) => {
             const meta = sourceMeta.get(s.id);
             if (!meta) return s;

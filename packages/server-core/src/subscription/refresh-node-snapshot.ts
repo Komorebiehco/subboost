@@ -24,6 +24,7 @@ import {
 } from "@subboost/core/subscription/subscription-response-info";
 import type { SubscriptionImportErrorCategory } from "@subboost/core/subscription/import-error";
 import type { ParsedNode } from "@subboost/core/types/node";
+import { orderNodesBySources } from "@subboost/core/subscription/node-source-order";
 import { normalizeSavedSourcesForPersistence, type SavedSource, type SavedSourceType } from "./saved-sources";
 
 type UrlNodeFetchResult = {
@@ -353,7 +354,7 @@ export async function refreshNodeSnapshot(
   }
 
   return {
-    nodes: currentNodes,
+    nodes: orderNodesBySources(currentNodes, savedSources),
     subscriptionInfo,
     savedSources: refreshedSavedSources,
     attemptedUrlFetch,

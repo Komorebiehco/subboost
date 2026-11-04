@@ -182,6 +182,21 @@ describe("VisualGraph", () => {
     expect(mocks.captures.proxyGroupsPreview).toBeUndefined();
   });
 
+  it("previews selected relay and target members in node order", () => {
+    mocks.store.dialerProxyGroups = [{
+      id: "d1", name: "Relay", enabled: true, type: "select",
+      relayNodes: ["Gamma", "DIRECT", "Other group", "🇭🇰 Alpha", "Beta"],
+      targetNodes: ["Gamma", "Beta"],
+    }];
+    renderGraph();
+    expect(mocks.captures.proxyGroupsPreview.displayGroups.find(
+      (group: any) => group.id === "dialer:d1"
+    ).dialer).toMatchObject({
+      relayNodes: ["🇭🇰 Alpha", "DIRECT", "Other group", "Beta", "Gamma"],
+      targetNodes: ["Beta", "Gamma"],
+    });
+  });
+
   it("renders counts and node previews from effective nodes", () => {
     mocks.store.nodes = [
       { name: "TAG-Notice", _originName: "套餐到期提醒", type: "ss" },

@@ -279,6 +279,46 @@ describe("local subscription service", () => {
     await expect(deleteSubscription("owner-1", "missing")).resolves.toBe(false);
   });
 
+  it("orders existing data on read and persists config-only source moves without changing membership", async () => {
+    const a = { ...node("A"), _sourceIds: ["a"] };
+    const b = { ...node("B"), _sourceIds: ["b"] };
+    const sources = [
+      { id: "a", type: "url", content: "https://a.example/sub" },
+      { id: "b", type: "url", content: "https://b.example/sub" },
+    ];
+    const config = {
+      sources,
+      listenerPorts: { A: 41000 },
+      customRules: ["DOMAIN,example.com,DIRECT"],
+      dialerProxyGroups: [{
+        id: "relay", name: "Relay", type: "select",
+        relayNodes: ["B", "DIRECT", "Other group", "A"], targetNodes: [],
+      }],
+    };
+    const saved = row({
+      encryptedNodes: JSON.stringify([b, a]),
+      encryptedConfig: JSON.stringify(config),
+    });
+    const detail = formatSubscriptionDetail(saved);
+    expect(detail.nodes).toEqual([a, b]);
+    expect(detail.config.dialerProxyGroups).toMatchObject([{
+      relayNodes: ["A", "DIRECT", "Other group", "B"],
+    }]);
+
+    mocks.prisma.subscription.findFirst.mockResolvedValueOnce(saved);
+    await updateSubscription("owner-1", "sub-1", {
+      config: { ...config, sources: [...sources].reverse() },
+    });
+    const { data } = mocks.prisma.subscription.update.mock.calls.at(-1)![0];
+    expect(JSON.parse(data.encryptedNodes)).toEqual([b, a]);
+    expect(JSON.parse(data.encryptedConfig)).toMatchObject({
+      sources: [...sources].reverse(),
+      listenerPorts: config.listenerPorts,
+      customRules: config.customRules,
+      dialerProxyGroups: [{ relayNodes: ["B", "DIRECT", "Other group", "A"] }],
+    });
+  });
+
   it("creates subscriptions with normalized inputs and rejects invalid bodies", async () => {
     await expect(createSubscription("owner-1", null)).rejects.toThrow("Invalid request body.");
     await expect(createSubscription("owner-1", { name: "  " })).rejects.toThrow("Subscription name is required.");

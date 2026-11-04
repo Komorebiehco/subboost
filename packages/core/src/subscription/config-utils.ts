@@ -21,6 +21,7 @@ import { DEFAULT_SUBBOOST_CONFIG } from "@subboost/core/config/defaults";
 import { normalizeRuleModelFromConfig } from "@subboost/core/rules/rule-model";
 import { normalizeProxyGroupAdvancedConfig } from "@subboost/core/proxy-group-advanced";
 import { normalizeProxyGroupTargetRef } from "@subboost/core/proxy-group-targets";
+import { orderNodesBySources } from "./node-source-order";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -339,7 +340,9 @@ export function buildGenerateOptionsFromConfig(
 
   const dialerProxyGroups = normalizeDialerProxyGroups(config.dialerProxyGroups);
   const proxyGroupOrder = normalizeProxyGroupOrder(config.proxyGroupOrder);
-  const effectiveNodes = resolveNodeNameFilter(opts.nodes, config.nodeNameFilter).effectiveNodes;
+  const effectiveNodes = resolveNodeNameFilter(
+    orderNodesBySources(opts.nodes, config.sources), config.nodeNameFilter
+  ).effectiveNodes;
   const groupListeners = normalizeGroupListeners(config.groupListeners);
   const sanitizedNodes = stripImportedNodeControlFieldsFromList(effectiveNodes);
   const proxyGroupAdvanced = isRecord(config.proxyGroupAdvanced)

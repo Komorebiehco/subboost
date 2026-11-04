@@ -2,6 +2,8 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { generateClashYaml } from "@subboost/core/generator";
 import { buildGenerateOptionsFromConfig, getEffectiveTestOptions } from "@subboost/core/subscription/config-utils";
 import { buildProxyProvidersFromConfig } from "@subboost/core/subscription/proxy-providers";
+import { orderDialerGroupsByNodes, orderNodesBySources } from "@subboost/core/subscription/node-source-order";
+import type { DialerProxyGroup } from "@subboost/core/types/template-config";
 import type { SubscriptionResponseInfo } from "@subboost/core/subscription/subscription-response-info";
 import type { ParsedNode } from "@subboost/core/types/node";
 import {
@@ -160,13 +162,21 @@ export function generateLocalSubscriptionToken(): string {
 }
 
 export function readSubscriptionSecrets(row: SubscriptionRow) {
+  const rawConfig = decryptJsonObject(row.encryptedConfig);
+  const nodes = orderNodesBySources(decryptJson<ParsedNode[]>(row.encryptedNodes, []), rawConfig.sources);
+  const config = orderSubscriptionConfig(rawConfig, nodes);
   return {
     urls: decryptJson<string[]>(row.encryptedUrls, []),
-    nodes: decryptJson<ParsedNode[]>(row.encryptedNodes, []),
-    config: decryptJsonObject(row.encryptedConfig),
+    nodes,
+    config,
     subscriptionInfo:
       normalizeSubscriptionInfoForPersistence(decryptJson<unknown>(row.encryptedSubscriptionInfo, {})) ?? {},
   };
+}
+
+function orderSubscriptionConfig(config: Record<string, unknown>, nodes: ParsedNode[]): Record<string, unknown> {
+  if (!Array.isArray(config.dialerProxyGroups)) return config;
+  return { ...config, dialerProxyGroups: orderDialerGroupsByNodes(config.dialerProxyGroups as DialerProxyGroup[], nodes) };
 }
 
 export function formatSubscription(row: SubscriptionRow): SubscriptionSummary {
@@ -212,10 +222,10 @@ export async function createSubscription(ownerId: string, body: unknown): Promis
   if (!name) throw new Error("Subscription name is required.");
 
   const urls = normalizeSubscriptionUrlList(body.urls);
-  const nodes = validateLocalSubscriptionNodes(body.nodes);
+  const config = buildLocalSubscriptionConfig(body);
+  const nodes = orderNodesBySources(validateLocalSubscriptionNodes(body.nodes), config.sources);
   if (urls.length === 0 && nodes.length === 0) throw new Error("At least one URL or node is required.");
 
-  const config = buildLocalSubscriptionConfig(body);
   assertNodeNameFilterKeepsOutput(nodes, config);
   const autoUpdateInterval = normalizeLocalAutoUpdateIntervalSeconds(body.autoUpdateInterval);
   const subscriptionInfo = normalizeSubscriptionInfoForPersistence(body.subscriptionInfo) ?? {};
@@ -227,7 +237,7 @@ export async function createSubscription(ownerId: string, body: unknown): Promis
       token: generateLocalSubscriptionToken(),
       encryptedUrls: encryptJson(urls),
       encryptedNodes: encryptJson(nodes),
-      encryptedConfig: encryptJson(config),
+      encryptedConfig: encryptJson(orderSubscriptionConfig(config, nodes)),
       encryptedSubscriptionInfo: encryptJson(subscriptionInfo),
       autoUpdateInterval,
     },
@@ -247,17 +257,19 @@ export async function updateSubscription(ownerId: string, id: string, body: unkn
   const hasUrls = "urls" in body;
   const hasNodes = "nodes" in body;
   const hasConfig = "config" in body || "smartNodeMatchingEnabled" in body;
-  const nextNodes = hasNodes ? validateLocalSubscriptionNodes(body.nodes) : currentSecrets.nodes;
+  let nextNodes = hasNodes ? validateLocalSubscriptionNodes(body.nodes) : currentSecrets.nodes;
   let nextConfig = currentSecrets.config;
 
   if (hasUrls) {
     data.encryptedUrls = encryptJson(normalizeSubscriptionUrlList(body.urls));
   }
-  if (hasNodes) {
-    data.encryptedNodes = encryptJson(nextNodes);
-  }
   if (hasConfig) {
     nextConfig = buildLocalSubscriptionConfig(body, currentSecrets.config);
+  }
+  if (hasNodes || hasConfig) {
+    nextNodes = orderNodesBySources(nextNodes, nextConfig.sources);
+    data.encryptedNodes = encryptJson(nextNodes);
+    nextConfig = orderSubscriptionConfig(nextConfig, nextNodes);
     data.encryptedConfig = encryptJson(nextConfig);
   }
   if ("subscriptionInfo" in body) {

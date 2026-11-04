@@ -31,6 +31,27 @@ function deferred<T>() {
 describe("createSourceActions", () => {
   beforeEach(resetSourceActionMocks);
 
+  it("moves source nodes and selected members together without changing membership", () => {
+    const a = source({ id: "a" });
+    const b = source({ id: "b" });
+    const { actions, getState } = createHarness({
+      sources: [a, b],
+      nodes: [node("A", { _sourceIds: ["a"] }), node("B2", { _sourceIds: ["b"] }),
+        node("B1", { _sourceIds: ["b"] }), node("Manual")],
+      dialerProxyGroups: [{
+        id: "relay", name: "Relay", type: "select",
+        relayNodes: ["DIRECT", "A", "Other group", "B1", "B2"], targetNodes: ["Manual"],
+      }],
+      listenerPorts: { A: 41000 },
+    });
+    actions.setSources([b, a]);
+    expect(getState().nodes.map((item: ParsedNode) => item.name)).toEqual(["B2", "B1", "A", "Manual"]);
+    expect(getState().dialerProxyGroups[0]).toMatchObject({
+      relayNodes: ["DIRECT", "B2", "Other group", "B1", "A"], targetNodes: ["Manual"],
+    });
+    expect(getState().listenerPorts).toEqual({ A: 41000 });
+  });
+
   it("passes source DoH to imports and rejects stale results after a resolver change", async () => {
     const pending = deferred<DeferredFetchResult>();
     mocks.fetchUrlContentInBrowser.mockReturnValueOnce(pending.promise);

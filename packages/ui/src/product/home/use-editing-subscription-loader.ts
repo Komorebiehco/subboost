@@ -10,6 +10,7 @@ import { normalizeRuleModelFromConfig } from "@subboost/core/rules/rule-model";
 import { resolveProxyGroupAdvancedModeEnabled } from "@subboost/core/proxy-group-advanced-mode";
 import { normalizeProxyGroupAdvancedConfig } from "@subboost/core/proxy-group-advanced";
 import { tryNormalizeSubscriptionUrlInput } from "@subboost/core/subscription/url-input";
+import { orderDialerGroupsByNodes, orderNodesBySources } from "@subboost/core/subscription/node-source-order";
 import {
   hasSubscriptionUserInfo,
   normalizeSubscriptionUserInfo,
@@ -571,9 +572,10 @@ export function useEditingSubscriptionLoader({
           setStoreSources(rebuiltSourcesWithStatus);
         }
 
+        const orderedNodes = orderNodesBySources(hydratedNodes, rebuiltSourcesWithStatus);
         useConfigStore.setState((state) => ({
           ...state,
-          nodes: hydratedNodes,
+          nodes: orderedNodes,
           deletedNodeNames: deletedNodeNamesMerged.length > 0 ? deletedNodeNamesMerged : state.deletedNodeNames,
           deletedNodes:
             deletedNodesFromCfg.length > 0
@@ -595,7 +597,7 @@ export function useEditingSubscriptionLoader({
             typeof (cfg as any).moduleRuleEditWarningAccepted === "boolean"
               ? Boolean((cfg as any).moduleRuleEditWarningAccepted)
               : state.moduleRuleEditWarningAccepted,
-          dialerProxyGroups: dialerProxyGroupsFromCfg as any,
+          dialerProxyGroups: orderDialerGroupsByNodes(dialerProxyGroupsFromCfg, orderedNodes),
           proxyGroupNameOverrides: proxyGroupNameOverridesFromCfg
             ? Object.fromEntries(
               Object.entries(proxyGroupNameOverridesFromCfg)

@@ -20,6 +20,20 @@ function node(patch: Partial<ParsedNode> = {}): ParsedNode {
 }
 
 describe("subscription config utils", () => {
+  it("emits nodes and relay members in saved source order", () => {
+    const a = { ...node({ name: "A" }), _sourceIds: ["a"] } as ParsedNode;
+    const b = { ...node({ name: "B" }), _sourceIds: ["b"] } as ParsedNode;
+    const options = buildGenerateOptionsFromConfig({
+      sources: [{ id: "a" }, { id: "b" }],
+      dialerProxyGroups: [{ id: "relay", name: "Relay", type: "select",
+        relayNodes: ["DIRECT", "B", "A"], targetNodes: [] }],
+    }, { nodes: [b, a] });
+    const output = generateClashConfig(options);
+    expect(output.proxies?.map((item) => item.name)).toEqual(["A", "B"]);
+    expect(output["proxy-groups"]?.find((group) => group.name === "Relay")?.proxies)
+      .toEqual(["DIRECT", "A", "B"]);
+  });
+
   it("normalizes effective test options with guarded fallbacks", () => {
     expect(getEffectiveTestOptions({ testUrl: " https://cp.cloudflare.com ", testInterval: 120 })).toEqual({
       testUrl: "https://cp.cloudflare.com",

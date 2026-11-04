@@ -37,6 +37,7 @@ import { collectDnsPolicyEntries, configToYaml } from "./yaml";
 import { isMihomoSupportedProxyNode, normalizeMihomoVlessForGeneration } from "../mihomo/proxy-sanitizer";
 import { chooseFallbackPolicyTarget, withBuiltinPolicyTargets } from "./policy-targets";
 import { resolveGroupListenerEntries, type GroupListenerTargetResolution } from "./group-listeners";
+import { orderDialerGroupsByNodes } from "../subscription/node-source-order";
 
 export interface GenerateOptions {
   nodes: ParsedNode[];
@@ -295,10 +296,13 @@ export function generateClashConfig(options: GenerateOptions): ClashConfig {
   );
   const enabledDialerProxyGroups = dialerProxyGroups.filter((g) => g && g.enabled !== false);
   const sanitizedDialerProxyGroups = enabledDialerProxyGroups.length > 0
-    ? sanitizeDialerProxyGroups(
-        enabledDialerProxyGroups,
-        nodeNameSet,
-        new Set([...moduleGroupNameSet, ...customGroupNameSet])
+    ? orderDialerGroupsByNodes(
+        sanitizeDialerProxyGroups(
+          enabledDialerProxyGroups,
+          nodeNameSet,
+          new Set([...moduleGroupNameSet, ...customGroupNameSet])
+        ),
+        uniqueNodes
       )
     : [];
 

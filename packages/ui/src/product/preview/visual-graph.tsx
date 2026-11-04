@@ -14,6 +14,7 @@ import { getModuleRuleOrderKey } from "@subboost/core/generator/module-rules";
 import { resolveProxyGroupModuleName } from "@subboost/core/proxy-group-name";
 import { resolveProxyGroupTargetName } from "@subboost/core/proxy-group-targets";
 import { resolveNodeNameFilter } from "@subboost/core/subscription/node-name-filter";
+import { orderDialerGroupsByNodes } from "@subboost/core/subscription/node-source-order";
 import { collectCustomRoutingRuleSets } from "@subboost/core/rules/custom-routing-rule-sets";
 import { CustomRulesPreview } from "./visual-graph/custom-rules-preview";
 import { getDialerEmojiFromName } from "./visual-graph/emoji";
@@ -76,8 +77,8 @@ export function VisualGraph() {
   );
 
   const enabledDialerProxyGroups = React.useMemo(
-    () => dialerProxyGroups.filter((g) => g && g.enabled !== false),
-    [dialerProxyGroups],
+    () => orderDialerGroupsByNodes(dialerProxyGroups.filter((g) => g && g.enabled !== false), nodes),
+    [dialerProxyGroups, nodes],
   );
   const [expandedGroups, setExpandedGroups] = React.useState<Set<string>>(
     new Set(["module:select", "module:auto"]),

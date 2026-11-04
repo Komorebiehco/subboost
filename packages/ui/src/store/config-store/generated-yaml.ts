@@ -2,6 +2,7 @@ import { generateClashYaml } from "@subboost/core/generator";
 import { stripImportedNodeControlFieldsFromList } from "@subboost/core/subscription/imported-node-controls";
 import { resolveNodeNameFilter } from "@subboost/core/subscription/node-name-filter";
 import { buildProxyProvidersFromConfig } from "@subboost/core/subscription/proxy-providers";
+import { orderNodesBySources } from "@subboost/core/subscription/node-source-order";
 import type { ParsedNode } from "@subboost/core/types/node";
 import type { ConfigState } from "./definitions";
 
@@ -59,7 +60,9 @@ export function computeGeneratedYamlResult(state: ConfigState): GeneratedYamlRes
   );
 
   try {
-    const { effectiveNodes } = resolveNodeNameFilter(state.nodes, state.nodeNameFilter);
+    const { effectiveNodes } = resolveNodeNameFilter(
+      orderNodesBySources(state.nodes, state.sources), state.nodeNameFilter
+    );
     const hasPreviewContent = effectiveNodes.length > 0 || Boolean(proxyProviders);
     const yaml = generateClashYaml(
       buildGenerateClashYamlOptions(state, proxyProviders, effectiveNodes)

@@ -17,6 +17,26 @@ describe("refreshNodeSnapshot", () => {
     vi.restoreAllMocks();
   });
 
+  it("keeps failed-source nodes in source order when a later source adds nodes", async () => {
+    const result = await refreshNodeSnapshot({
+      config: { sources: [
+        { id: "a", type: "url", content: "https://a.example/sub" },
+        { id: "b", type: "url", content: "https://b.example/sub" },
+      ] },
+      urls: [],
+      storedNodes: [
+        { ...node, name: "B", _originName: "B", _sourceIds: ["b"] },
+        { ...node, name: "A", _originName: "A", _sourceIds: ["a"] },
+      ] as ParsedNode[],
+      fetchUrlNodes: async (source) => source.id === "a"
+        ? { ok: false, nodes: [], error: "restricted" }
+        : { ok: true, nodes: [{ ...node, name: "B" }, { ...node, name: "B new" }] },
+    });
+    expect(result.nodes.map((item) => item.name)).toEqual(["A", "B", "B new"]);
+    expect(result.failedSourceCount).toBe(1);
+    expect(result.refreshedUrlSourceCount).toBe(1);
+  });
+
   it("uses shared saved-source normalization for fallback URLs", async () => {
     const fetchUrlNodes = vi.fn(async () => ({
       ok: true,

@@ -31,6 +31,28 @@ function deferred<T>() {
 describe("createSourceActions parseMultipleSources", () => {
   beforeEach(resetSourceActionMocks);
 
+  it("keeps a failed later source after successful sources in the configured order", async () => {
+    const sources = [
+      source({ id: "working", type: "url", content: "https://example.com/working" }),
+      source({ id: "restricted", type: "url", content: "https://example.com/restricted" }),
+    ];
+    mocks.fetchUrlContentInBrowser
+      .mockResolvedValueOnce({ content: "new", headers: {}, parseResult: parseResult([node("Fresh")]) })
+      .mockRejectedValueOnce(new Error("restricted"));
+    const cached = node("Verified", { _originName: "Verified", _sourceIds: ["restricted"] });
+    const { actions, getState } = createHarness({
+      sources,
+      nodes: [cached],
+      dialerProxyGroups: [{
+        id: "chain", name: "Chain", type: "select", relayNodes: ["Verified", "Fresh"], targetNodes: [],
+      }],
+    });
+    await actions.parseMultipleSources(sources);
+    expect(getState().nodes.map((item: ParsedNode) => item.name)).toEqual(["Fresh", "Verified"]);
+    expect(getState().nodes[1]).toEqual(cached);
+    expect(getState().dialerProxyGroups[0].relayNodes).toEqual(["Fresh", "Verified"]);
+  });
+
   it("retains cached nodes and group references when a URL import returns placeholder errors", async () => {
     const sources = [
       source({ id: "restricted", type: "url", content: "https://example.com/restricted" }),
