@@ -4,6 +4,16 @@ export const CLIENT_UPDATE_PLACEHOLDER_ERROR = "检测到客户端更新提示�
 
 type PlaceholderNodeLike = Pick<ParsedNode, "name" | "server" | "port"> | null | undefined;
 
+export function hasDocumentationPlaceholderNodes(nodes: ParsedNode[]): boolean {
+  return nodes.some((node) => {
+    const server = typeof node.server === "string"
+      ? node.server.trim().toLowerCase().replace(/^\[|\]$/g, "")
+      : "";
+    const ipv4 = /^(?:192\.0\.2|198\.51\.100|203\.0\.113)\.(\d{1,3})$/.exec(server);
+    return Boolean((ipv4 && Number(ipv4[1]) <= 255) || /^2001:0?db8:/.test(server));
+  });
+}
+
 export function isClientUpdatePlaceholderNode(node: PlaceholderNodeLike): boolean {
   if (!node) return false;
 

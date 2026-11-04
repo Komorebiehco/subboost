@@ -1,6 +1,7 @@
 import { parseSubscription } from "@subboost/core/parser";
 import {
   hasClientUpdatePlaceholderError,
+  hasDocumentationPlaceholderNodes,
   looksLikeClientUpdatePlaceholderNodes,
 } from "@subboost/core/parser/placeholder";
 import {
@@ -100,7 +101,9 @@ function createErrorInfo(message: string, httpStatus?: number): SubscriptionImpo
 }
 
 function isUsableParsedAttempt(attempt: ParsedAttempt): attempt is Extract<ParsedAttempt, { ok: true }> {
-  return attempt.ok && attempt.parsed.nodes.length > 0 && !looksLikeClientUpdatePlaceholderNodes(attempt.parsed.nodes);
+  return attempt.ok && attempt.parsed.nodes.length > 0 &&
+    !looksLikeClientUpdatePlaceholderNodes(attempt.parsed.nodes) &&
+    !hasDocumentationPlaceholderNodes(attempt.parsed.nodes);
 }
 
 function shouldContinueAfterCleanAttempt(params: {
@@ -140,7 +143,9 @@ function toFailure(attempt: ParsedAttempt | null, fallback = "获取 url 失败"
   }
 
   const parseError = attempt.parsed.errors[0] || "未解析到有效节点";
-  const message = hasClientUpdatePlaceholderError(attempt.parsed.errors) ||
+  const message = hasDocumentationPlaceholderNodes(attempt.parsed.nodes)
+    ? "订阅返回了不可连接的文档占位 IP，已拒绝导入。若上游限制请求地区，请通过国内网络拉取；修改 DNS 无法还原已被替换的 IP。"
+    : hasClientUpdatePlaceholderError(attempt.parsed.errors) ||
     looksLikeClientUpdatePlaceholderNodes(attempt.parsed.nodes)
     ? "订阅服务返回了客户端更新提示占位内容，未导入该结果"
     : parseError;

@@ -21,6 +21,42 @@ function ssLink(name = "SS Node"): string {
 }
 
 describe("importSubscriptionFromUrl", () => {
+  it("rejects syntactically valid nodes whose server was replaced with a documentation IP", async () => {
+    const result = await importSubscriptionFromUrl(
+      { url: "https://example.com/sub.yaml" },
+      {
+        userAgents: ["first", "second"],
+        fetchText: async () => ({
+          ok: true,
+          content: mihomoYaml.replace("server: example.com", "server: 192.0.2.123"),
+          headers: {},
+        }),
+      }
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toContain("占位 IP");
+    expect(result.error).toContain("国内网络");
+    expect(result.errorInfo.category).toBe("parse");
+  });
+
+  it("continues after fake addresses and accepts a later response with real hostnames", async () => {
+    const fetchText = vi.fn(async (request: SourceImportTransportRequest) => ({
+      ok: true,
+      content: request.userAgent === "first"
+        ? mihomoYaml.replace("server: example.com", "server: 203.0.113.12")
+        : mihomoYaml,
+      headers: {},
+    }));
+    const result = await importSubscriptionFromUrl(
+      { url: "https://example.com/sub.yaml" },
+      { fetchText, userAgents: ["first", "second"] }
+    );
+    expect(fetchText).toHaveBeenCalledTimes(2);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.parsedNodes[0].server).toBe("example.com");
+  });
+
   it("tries a custom source user agent before configured fallbacks", async () => {
     const fetchText = vi.fn(async (request: SourceImportTransportRequest): Promise<SourceImportTransportResult> => {
       if (request.userAgent === "Clash.Meta/1.19.24") {

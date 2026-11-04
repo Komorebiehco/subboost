@@ -579,6 +579,19 @@ export function createSourceActions(set: SetState, get: GetState, setAndGenerate
         }
       }
 
+      // A failed URL fetch must not erase the last usable nodes or their group references.
+      const failedUrlIds = new Set(
+        sources
+          .filter((source) => source.type === "url" && !source.useProxyProviders &&
+            sourceMeta.get(source.id)?.parsed === false)
+          .map((source) => source.id)
+      );
+      const retainedNodes = get().nodes.flatMap((node) => {
+        const sourceIds = getNodeSourceIds(node).filter((id) => failedUrlIds.has(id));
+        return sourceIds.length ? [mergeNodeSourceIds(node, new Set(sourceIds))] : [];
+      });
+      allNodes.unshift(...retainedNodes);
+
       // 去重节点（基于 originName + 节点内容）
       const uniqueNodeMap = new Map<string, ParsedNode>();
       for (const node of allNodes) {

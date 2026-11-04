@@ -31,6 +31,31 @@ function deferred<T>() {
 describe("createSourceActions parseMultipleSources", () => {
   beforeEach(resetSourceActionMocks);
 
+  it("retains cached nodes and group references when a URL import returns placeholder errors", async () => {
+    const sources = [
+      source({ id: "restricted", type: "url", content: "https://example.com/restricted" }),
+      source({ id: "working", type: "url", content: "https://example.com/working" }),
+    ];
+    mocks.fetchUrlContentInBrowser
+      .mockRejectedValueOnce(new Error("订阅返回了不可连接的文档占位 IP"))
+      .mockResolvedValueOnce({ content: "new", headers: {}, parseResult: parseResult([node("Fresh")]) });
+    const cached = node("Verified", { _originName: "Verified", _sourceIds: ["restricted"] });
+    const { actions, getState } = createHarness({
+      sources,
+      nodes: [cached, node("Old", { _originName: "Old", _sourceIds: ["working"] })],
+      listenerPorts: { Verified: 41000 },
+      dialerProxyGroups: [{
+        id: "chain", name: "Chain", relayNodes: ["DIRECT"], targetNodes: ["Verified"],
+      }],
+    });
+    await actions.parseMultipleSources(sources);
+    expect(getState().nodes).toEqual([cached, expect.objectContaining({ name: "Fresh" })]);
+    expect(getState().listenerPorts).toEqual({ Verified: 41000 });
+    expect(getState().dialerProxyGroups[0].targetNodes).toEqual(["Verified"]);
+    expect(getState().sources[0].error).toContain("占位 IP");
+    expect(getState().sources[0].parsed).toBe(false);
+  });
+
   it("parses multiple mixed sources and records per-source metadata", async () => {
     mocks.fetchUrlContentInBrowser
       .mockResolvedValueOnce({
