@@ -317,6 +317,7 @@ export function buildSubscriptionFetchCallbacks() {
       const imported = await importSourceUrlDirect({
         url: source.content,
         ...(source.sourceUserAgent ? { sourceUserAgent: source.sourceUserAgent } : {}),
+        ...(source.sourceDohUrl ? { sourceDohUrl: source.sourceDohUrl } : {}),
         ...(source.userinfoUrl ? { userinfoUrl: source.userinfoUrl } : {}),
         ...(source.userinfoUserAgent ? { userinfoUserAgent: source.userinfoUserAgent } : {}),
       });

@@ -6,7 +6,13 @@ const mocks = vi.hoisted(() => ({
   lookup: vi.fn(),
   importSubscriptionFromUrl: vi.fn(),
   requestPinnedText: vi.fn(),
+  resolveSourceHostname: vi.fn(),
 }));
+
+vi.mock("./source-doh", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./source-doh")>();
+  return { ...actual, resolveSourceHostname: mocks.resolveSourceHostname };
+});
 
 vi.mock("node:dns/promises", () => ({
   lookup: mocks.lookup,
@@ -64,7 +70,7 @@ async function runTransport(url: string, overrides: Record<string, unknown> = {}
       ...overrides,
     });
   });
-  return importSourceUrlDirect({ url });
+  return importSourceUrlDirect({ url, sourceDohUrl: overrides.sourceDohUrl as string | undefined });
 }
 
 describe("local source import transport", () => {
@@ -195,6 +201,43 @@ describe("local source import transport", () => {
       addresses: ["93.184.216.34"],
       maxBytes: 1024,
     }));
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it("uses source DoH instead of system DNS for content, redirects and userinfo", async () => {
+    mocks.resolveSourceHostname.mockResolvedValue(["1.1.1.1"]);
+    mocks.requestPinnedText
+      .mockResolvedValueOnce({ status: 302, headers: { location: "https://cdn.example/sub" }, content: "" })
+      .mockResolvedValueOnce({ status: 200, headers: {}, content: "ss://node" });
+    await expect(runTransport("https://example.com/sub", { sourceDohUrl: "https://223.5.5.5/dns-query" }))
+      .resolves.toMatchObject({ ok: true });
+    expect(mocks.resolveSourceHostname).toHaveBeenNthCalledWith(
+      1, "example.com", "https://223.5.5.5/dns-query", expect.any(AbortSignal)
+    );
+    expect(mocks.resolveSourceHostname).toHaveBeenNthCalledWith(
+      2, "cdn.example", "https://223.5.5.5/dns-query", expect.any(AbortSignal)
+    );
+    expect(mocks.requestPinnedText).toHaveBeenLastCalledWith(expect.objectContaining({ addresses: ["1.1.1.1"] }));
+    await fetchSourceUserInfoHeadersDirect({
+      userinfoUrl: "https://info.example/usage",
+      sourceDohUrl: "https://223.5.5.5/dns-query",
+    });
+    expect(mocks.resolveSourceHostname).toHaveBeenLastCalledWith(
+      "info.example", "https://223.5.5.5/dns-query", expect.any(AbortSignal)
+    );
+    expect(mocks.requestPinnedText).toHaveBeenLastCalledWith(expect.objectContaining({ method: "HEAD" }));
+    expect(mocks.lookup).not.toHaveBeenCalled();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it("fails closed on custom DoH failures and private answers", async () => {
+    mocks.resolveSourceHostname.mockResolvedValueOnce(["127.0.0.1"]).mockRejectedValueOnce(new Error("DoH unavailable"));
+    await expect(runTransport("https://example.com/sub", { sourceDohUrl: "https://223.5.5.5/dns-query" }))
+      .resolves.toMatchObject({ ok: false, errorInfo: { category: "security" } });
+    await expect(runTransport("https://example.com/sub", { sourceDohUrl: "https://223.5.5.5/dns-query" }))
+      .resolves.toMatchObject({ ok: false });
+    expect(mocks.lookup).not.toHaveBeenCalled();
+    expect(mocks.requestPinnedText).not.toHaveBeenCalled();
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 

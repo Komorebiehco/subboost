@@ -39,6 +39,7 @@ describe("local source import route", () => {
     const response = await route.POST(jsonRequest({
       url: "https://example.com/sub.yaml",
       sourceUserAgent: "Clash.Meta/1.19.24",
+      sourceDohUrl: " https://223.5.5.5/dns-query ",
       userinfoUrl: "https://example.com/userinfo",
       userinfoUserAgent: "mihomo/1.19.24",
     }));
@@ -47,6 +48,7 @@ describe("local source import route", () => {
     expect(importSourceUrlDirect).toHaveBeenCalledWith({
       url: "https://example.com/sub.yaml",
       sourceUserAgent: "Clash.Meta/1.19.24",
+      sourceDohUrl: "https://223.5.5.5/dns-query",
       userinfoUrl: "https://example.com/userinfo",
       userinfoUserAgent: "mihomo/1.19.24",
     });
@@ -107,6 +109,7 @@ describe("local source import route", () => {
     expect(importSourceUrlDirect).toHaveBeenCalledWith({
       url: "https://example.com/sub.yaml",
       sourceUserAgent: undefined,
+      sourceDohUrl: undefined,
       userinfoUrl: undefined,
       userinfoUserAgent: undefined,
     });

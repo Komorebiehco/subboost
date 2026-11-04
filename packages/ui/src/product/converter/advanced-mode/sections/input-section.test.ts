@@ -305,9 +305,10 @@ describe("advanced mode InputSection", () => {
     mocks.markSourceAsPendingImport.mockClear();
     mocks.captures.editor.onUpdateMeta("s1", { nameTemplate: "{name}", useProxyProviders: true });
     mocks.captures.editor.onUpdateMeta("s1", { sourceUserAgent: "Clash.Meta/1.19.24" });
+    mocks.captures.editor.onUpdateMeta("s1", { sourceDohUrl: "https://223.5.5.5/dns-query" });
     mocks.captures.editor.onUpdateMeta("s1", { userinfoUrl: "https://meta.example/info" });
     mocks.captures.editor.onUpdateMeta("s1", { userinfoUserAgent: "mihomo" });
-    expect(mocks.markSourceAsPendingImport).toHaveBeenCalledTimes(4);
+    expect(mocks.markSourceAsPendingImport).toHaveBeenCalledTimes(5);
 
     mocks.markSourceAsPendingImport.mockClear();
     mocks.captures.editor.onUpdateMeta("s1", { nodeCount: 9 });
@@ -373,6 +374,7 @@ describe("advanced mode InputSection", () => {
       nameTemplate: "[{tag}] {name}",
       useProxyProviders: false,
       sourceUserAgent: "",
+      sourceDohUrl: "",
       proxyProviderUserAgent: "",
       userinfoUrl: "https://example.com/userinfo",
       userinfoUserAgent: "clash",
@@ -399,6 +401,7 @@ describe("advanced mode InputSection", () => {
       nameTemplate: "",
       useProxyProviders: false,
       sourceUserAgent: "",
+      sourceDohUrl: "",
       proxyProviderUserAgent: "",
       userinfoUrl: "",
       userinfoUserAgent: "",

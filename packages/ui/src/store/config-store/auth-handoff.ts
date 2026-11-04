@@ -71,6 +71,7 @@ function sourceArray(value: unknown): SubscriptionSource[] | undefined {
       ...(typeof item.nameTemplate === "string" ? { nameTemplate: item.nameTemplate } : {}),
       ...(typeof item.useProxyProviders === "boolean" ? { useProxyProviders: item.useProxyProviders } : {}),
       ...(typeof item.sourceUserAgent === "string" ? { sourceUserAgent: item.sourceUserAgent } : {}),
+      ...(typeof item.sourceDohUrl === "string" ? { sourceDohUrl: item.sourceDohUrl } : {}),
       ...(typeof item.proxyProviderUserAgent === "string" ? { proxyProviderUserAgent: item.proxyProviderUserAgent } : {}),
       ...(typeof item.userinfoUrl === "string" ? { userinfoUrl: item.userinfoUrl } : {}),
       ...(typeof item.userinfoUserAgent === "string" ? { userinfoUserAgent: item.userinfoUserAgent } : {}),

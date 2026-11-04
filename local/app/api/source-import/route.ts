@@ -21,6 +21,7 @@ export async function POST(request: Request) {
     const result = await importSourceUrlDirect({
       url: getStringField(body, "url"),
       sourceUserAgent: getStringField(body, "sourceUserAgent") || undefined,
+      sourceDohUrl: getStringField(body, "sourceDohUrl") || undefined,
       userinfoUrl: getStringField(body, "userinfoUrl") || undefined,
       userinfoUserAgent: getStringField(body, "userinfoUserAgent") || undefined,
     });

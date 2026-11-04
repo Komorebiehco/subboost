@@ -177,4 +177,16 @@ describe("InputSourceEditorDialog", () => {
     mocks.textareas[0].onChange({ target: { value: "ss://next" } });
     expect(nodes.handlers.onUpdateContent).toHaveBeenCalledWith("source-nodes", "ss://next");
   });
+
+  it("edits per-source DoH only for server-side URL imports", () => {
+    const { html, handlers } = renderDialog({
+      source: { ...urlSource, useProxyProviders: false, sourceDohUrl: "https://223.5.5.5/dns-query" } as any,
+    });
+    expect(html).toContain("订阅解析 DoH");
+    const field = mocks.inputs.find((input) => input["aria-label"] === "订阅解析 DoH");
+    expect(field.value).toBe("https://223.5.5.5/dns-query");
+    field.onChange({ target: { value: "https://dns.alidns.com/dns-query" } });
+    expect(handlers.onUpdateMeta).toHaveBeenCalledWith("source-url", { sourceDohUrl: "https://dns.alidns.com/dns-query" });
+    expect(renderDialog().html).not.toContain("订阅解析 DoH");
+  });
 });

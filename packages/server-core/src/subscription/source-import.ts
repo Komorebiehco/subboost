@@ -37,6 +37,7 @@ export type SourceImportTransportResult = {
 export type SourceImportRequest = {
   url: string;
   sourceUserAgent?: string;
+  sourceDohUrl?: string;
   userinfoUrl?: string;
   userinfoUserAgent?: string;
 };

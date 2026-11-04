@@ -19,6 +19,7 @@ export type DohTransportRequest = {
   headers: Record<string, string>;
   body: Uint8Array;
   timeoutMs: number;
+  signal?: AbortSignal;
 };
 
 export type DohTransportResponse = {
@@ -32,6 +33,7 @@ export type ResolveHostnameByDohOptions = {
   endpoints?: readonly string[];
   timeoutMs?: number;
   transport?: DohTransport;
+  signal?: AbortSignal;
 };
 
 function normalizeHostname(hostname: string): string {
@@ -100,6 +102,8 @@ function parseIpv6(bytes: Uint8Array): string {
 function parseDnsResponseAddresses(message: Uint8Array): string[] {
   if (message.length < 12) return [];
   const view = new DataView(message.buffer, message.byteOffset, message.byteLength);
+  const flags = view.getUint16(2);
+  if (!(flags & 0x8000) || (flags & 0x020f)) return [];
   const questionCount = view.getUint16(4);
   const answerCount = view.getUint16(6);
   const out = new Set<string>();
@@ -149,7 +153,7 @@ async function defaultDohTransport(request: DohTransportRequest): Promise<DohTra
       headers: request.headers,
       body: toArrayBuffer(request.body),
       redirect: "manual",
-      signal: controller.signal,
+      signal: request.signal ? AbortSignal.any([controller.signal, request.signal]) : controller.signal,
     });
     return {
       statusCode: response.status,
@@ -164,10 +168,12 @@ async function resolveEndpointAddresses(
   endpoint: string,
   hostname: string,
   timeoutMs: number,
-  transport: DohTransport
+  transport: DohTransport,
+  signal?: AbortSignal
 ): Promise<string[]> {
   const out = new Set<string>();
   for (const type of ["A", "AAAA"] as const) {
+    signal?.throwIfAborted();
     const response = await transport({
       endpoint,
       headers: {
@@ -176,7 +182,10 @@ async function resolveEndpointAddresses(
       },
       body: encodeDnsQuestion(hostname, type),
       timeoutMs,
-    });
+      signal,
+    }).catch(() => null);
+    signal?.throwIfAborted();
+    if (!response) continue;
     if (response.statusCode < 200 || response.statusCode >= 300) continue;
     for (const address of parseDnsResponseAddresses(response.body)) {
       if (isIP(address)) out.add(address);
@@ -197,7 +206,9 @@ export async function resolveHostnameByDoh(
   const transport = opts.transport ?? defaultDohTransport;
 
   for (const endpoint of endpoints) {
-    const addresses = await resolveEndpointAddresses(endpoint, normalizedHostname, timeoutMs, transport).catch(() => []);
+    opts.signal?.throwIfAborted();
+    const addresses = await resolveEndpointAddresses(endpoint, normalizedHostname, timeoutMs, transport, opts.signal).catch(() => []);
+    opts.signal?.throwIfAborted();
     if (addresses.length > 0) return addresses;
   }
 

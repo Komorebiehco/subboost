@@ -121,6 +121,30 @@ export function SourceEditorDialog({
                     />
                   </FormField>
 
+                  {!source.useProxyProviders ? (
+                    <FormField label={
+                      <span className="inline-flex items-center gap-2">
+                        订阅解析 DoH（可选）
+                        <HelpPopover label="订阅解析 DoH 说明" side="bottom" align="start">
+                          <p className="text-xs leading-relaxed">
+                            留空使用默认 DNS。此设置用于 SubBoost 拉取订阅及流量信息时解析域名，
+                            不改变服务器出口 IP，也不修改节点地址。仅限国内 IP 访问的订阅仍需要国内出口。
+                          </p>
+                        </HelpPopover>
+                      </span>
+                    }>
+                      <Input
+                        value={source.sourceDohUrl ?? ""}
+                        onChange={(event) => onUpdateMeta(source.id, { sourceDohUrl: event.target.value })}
+                        placeholder="https://223.5.5.5/dns-query"
+                        aria-label="订阅解析 DoH"
+                        type="url"
+                        maxLength={2048}
+                        className="text-xs font-mono"
+                      />
+                    </FormField>
+                  ) : null}
+
                   {source.useProxyProviders ? (
                     <FormField label="proxy-provider User-Agent">
                       <Input

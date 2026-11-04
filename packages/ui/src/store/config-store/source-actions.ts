@@ -269,6 +269,7 @@ export function createSourceActions(set: SetState, get: GetState, setAndGenerate
         if (source.type === "url") {
           const fetched = await fetchUrlContentInBrowser(source.content, {
             sourceUserAgent: source.sourceUserAgent,
+            sourceDohUrl: source.sourceDohUrl,
             userinfoUrl: source.userinfoUrl,
             userinfoUserAgent: source.userinfoUserAgent,
           });
@@ -484,6 +485,7 @@ export function createSourceActions(set: SetState, get: GetState, setAndGenerate
             try {
               const fetched = await fetchUrlContentInBrowser(source.content, {
                 sourceUserAgent: source.sourceUserAgent,
+                sourceDohUrl: source.sourceDohUrl,
                 userinfoUrl: source.userinfoUrl,
                 userinfoUserAgent: source.userinfoUserAgent,
               });

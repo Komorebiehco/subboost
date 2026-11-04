@@ -527,6 +527,7 @@ describe("local subscription service", () => {
         content: "https://example.com/sub",
         userinfoUrl: "https://example.com/info",
         userinfoUserAgent: "UA",
+        sourceDohUrl: "https://223.5.5.5/dns-query",
       } as any)
     ).resolves.toEqual({
       ok: true,
@@ -535,6 +536,9 @@ describe("local subscription service", () => {
       headers: { "subscription-userinfo": "upload=1; total=2048" },
     });
 
+    expect(mocks.importSourceUrlDirect).toHaveBeenCalledWith(expect.objectContaining({
+      sourceDohUrl: "https://223.5.5.5/dns-query",
+    }));
     mocks.importSourceUrlDirect.mockResolvedValueOnce({
       ok: false,
       responseStatus: 500,

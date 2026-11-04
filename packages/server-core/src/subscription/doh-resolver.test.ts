@@ -38,6 +38,7 @@ function ok(body: Uint8Array): DohTransportResponse {
 function header(questionCount: number, answerCount: number): Uint8Array {
   const out = new Uint8Array(12);
   const view = new DataView(out.buffer);
+  view.setUint16(2, 0x8180);
   view.setUint16(4, questionCount);
   view.setUint16(6, answerCount);
   return out;
@@ -51,6 +52,45 @@ function malformedAnswerName(firstNameByte: number): Uint8Array {
 }
 
 describe("RFC8484 DoH resolver", () => {
+  it.each([0x0180, 0x8380, 0x8183])("rejects invalid DNS response flags %s", async (flags) => {
+    const body = dnsResponse([{ type: "A", address: "1.1.1.1" }]);
+    new DataView(body.buffer).setUint16(2, flags);
+    await expect(resolveHostnameByDoh("example.test", {
+      endpoints: ["https://doh.example/dns-query"],
+      transport: vi.fn().mockResolvedValue(ok(body)),
+    })).resolves.toEqual([]);
+  });
+
+  it("stops trying query types and fallback endpoints after cancellation", async () => {
+    const controller = new AbortController();
+    const transport = vi.fn(async () => {
+      controller.abort(new Error("cancelled"));
+      throw new Error("network failure");
+    });
+    await expect(resolveHostnameByDoh("example.test", {
+      endpoints: ["https://first.example/dns-query", "https://second.example/dns-query"],
+      signal: controller.signal,
+      transport,
+    })).rejects.toThrow("cancelled");
+    expect(transport).toHaveBeenCalledTimes(1);
+  });
+
+  it("cancels the default HTTP transport without trying fallback endpoints", async () => {
+    const controller = new AbortController();
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (_input, init) => {
+      const signal = init?.signal;
+      controller.abort();
+      expect(signal?.aborted).toBe(true);
+      throw new Error("cancelled");
+    });
+    try {
+      await expect(resolveHostnameByDoh("example.test", { signal: controller.signal })).rejects.toThrow();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      fetchMock.mockRestore();
+    }
+  });
+
   it("posts DNS wire messages and returns A/AAAA addresses from the first usable endpoint", async () => {
     const transport = vi
       .fn()
