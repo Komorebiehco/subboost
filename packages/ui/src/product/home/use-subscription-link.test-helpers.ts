@@ -45,6 +45,7 @@ export function makeOptions(overrides: Record<string, unknown> = {}) {
         tag: "A",
         nameTemplate: "{tag}-{name}",
         sourceUserAgent: " Clash.Meta/1.19.24 ",
+        sourceDohUrl: " https://223.5.5.5/dns-query ",
         proxyProviderUserAgent: " FlClash/0.8.92 ",
         userinfoUrl: " https://airport.example/userinfo ",
         userinfoUserAgent: " Clash.Meta ",

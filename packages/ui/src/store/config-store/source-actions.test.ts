@@ -31,6 +31,24 @@ function deferred<T>() {
 describe("createSourceActions", () => {
   beforeEach(resetSourceActionMocks);
 
+  it("passes source DoH to imports and rejects stale results after a resolver change", async () => {
+    const pending = deferred<DeferredFetchResult>();
+    mocks.fetchUrlContentInBrowser.mockReturnValueOnce(pending.promise);
+    const first = source({
+      id: "doh-source", type: "url", content: "https://one.example/sub",
+      sourceDohUrl: "https://223.5.5.5/dns-query",
+    });
+    const { actions, getState } = createHarness({ sources: [first], nodes: [node("Existing")] });
+    const importing = actions.parseSingleSource(first.id);
+    expect(mocks.fetchUrlContentInBrowser).toHaveBeenCalledWith(first.content, expect.objectContaining({
+      sourceDohUrl: first.sourceDohUrl,
+    }));
+    actions.setSources([{ ...first, sourceDohUrl: "https://dns.alidns.com/dns-query" }]);
+    pending.resolve({ content: "new", headers: {}, parseResult: parseResult([node("Stale")]) });
+    await importing;
+    expect(getState().nodes.map((item: ParsedNode) => item.name)).toEqual(["Existing"]);
+  });
+
   it("removes nodes and references when a source is deleted", () => {
     const { actions, getState } = createHarness({
       sources: [

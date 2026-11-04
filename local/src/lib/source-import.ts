@@ -22,6 +22,7 @@ import {
 } from "@subboost/server-core/subscription/ssrf-ip";
 import { getAllowUnsafeSubscriptionSources } from "./source-import-settings";
 import { requestPinnedText, ResponseTooLargeError, type DirectHttpResponse } from "./pinned-http";
+import { resolveSourceHostname, SourceDohError } from "./source-doh";
 
 const DEFAULT_TIMEOUT_MS = 15000;
 const DEFAULT_MAX_BYTES = 10 * 1024 * 1024;
@@ -73,7 +74,9 @@ function normalizeHostname(hostname: string): string {
 
 async function validatePublicFetchTarget(
   url: string,
-  allowUnsafeSubscriptionSources: boolean
+  allowUnsafeSubscriptionSources: boolean,
+  sourceDohUrl?: string,
+  signal?: AbortSignal
 ): Promise<
   | { ok: true; addresses: string[] | null }
   | { ok: false; failure: SourceImportTransportResult }
@@ -93,18 +96,30 @@ async function validatePublicFetchTarget(
     return { ok: false, failure: toSecurityFailure("订阅 URL 不允许包含用户名或密码") };
   }
 
-  if (allowUnsafeSubscriptionSources) return { ok: true, addresses: null };
+  if (allowUnsafeSubscriptionSources && !sourceDohUrl) return { ok: true, addresses: null };
 
   const hostname = normalizeHostname(parsed.hostname);
-  if (!hostname || hostname === "localhost" || hostname.endsWith(".localhost") || hostname.endsWith(".local")) {
+  if (!allowUnsafeSubscriptionSources &&
+      (!hostname || hostname === "localhost" || hostname.endsWith(".localhost") || hostname.endsWith(".local"))) {
     return { ok: false, failure: toSecurityFailure("禁止访问本机或内网地址") };
   }
 
-  if (isPrivateOrReservedIp(hostname)) {
+  if (!allowUnsafeSubscriptionSources && isPrivateOrReservedIp(hostname)) {
     return { ok: false, failure: toSecurityFailure("禁止访问本机或内网地址") };
   }
 
   if (isIP(hostname)) return { ok: true, addresses: [hostname] };
+
+  if (sourceDohUrl) {
+    const addresses = normalizeResolvedIpAddresses(
+      await resolveSourceHostname(hostname, sourceDohUrl, signal ?? AbortSignal.timeout(DOH_TIMEOUT_MS * 2))
+    );
+    if (!addresses.length) return { ok: false, failure: toFailure("指定的 DoH 未返回地址") };
+    if (!allowUnsafeSubscriptionSources && addresses.some(isPrivateOrReservedIp)) {
+      return { ok: false, failure: toSecurityFailure("禁止访问本机或内网地址") };
+    }
+    return { ok: true, addresses };
+  }
 
   const records = await lookup(hostname, { all: true, verbatim: true }).catch(() => null);
   if (!records || records.length === 0) {
@@ -184,7 +199,8 @@ async function requestUnpinnedText(params: {
 
 async function fetchTextDirect(
   request: SourceImportTransportRequest,
-  allowUnsafeSubscriptionSources: boolean
+  allowUnsafeSubscriptionSources: boolean,
+  sourceDohUrl?: string
 ): Promise<SourceImportTransportResult> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), request.timeoutMs);
@@ -193,7 +209,7 @@ async function fetchTextDirect(
     let currentUrl = request.url;
     let response: DirectHttpResponse | null = null;
     for (let redirectCount = 0; redirectCount <= MAX_REDIRECTS; redirectCount += 1) {
-      const validation = await validatePublicFetchTarget(currentUrl, allowUnsafeSubscriptionSources);
+      const validation = await validatePublicFetchTarget(currentUrl, allowUnsafeSubscriptionSources, sourceDohUrl, controller.signal);
       if (!validation.ok) return validation.failure;
 
       const method = request.purpose === "userinfo" ? "HEAD" : "GET";
@@ -234,6 +250,7 @@ async function fetchTextDirect(
       responseStatus: response.status,
     };
   } catch (error) {
+    if (error instanceof SourceDohError) return toFailure(error.message);
     if (error instanceof ResponseTooLargeError) return toFailure("订阅响应过大", 413);
     const message = error instanceof Error ? error.message : String(error);
     return toFailure(message);
@@ -247,11 +264,12 @@ export async function importSourceUrlDirect(request: SourceImportRequest): Promi
   return importSubscriptionFromUrl(request, {
     timeoutMs: DEFAULT_TIMEOUT_MS,
     maxBytes: DEFAULT_MAX_BYTES,
-    fetchText: (transportRequest) => fetchTextDirect(transportRequest, allowUnsafeSubscriptionSources),
+    fetchText: (transportRequest) => fetchTextDirect(transportRequest, allowUnsafeSubscriptionSources, request.sourceDohUrl?.trim()),
   });
 }
 
 export async function fetchSourceUserInfoHeadersDirect(source: {
+  sourceDohUrl?: string;
   userinfoUrl?: string;
   userinfoUserAgent?: string;
 }): Promise<Record<string, string> | undefined> {
@@ -265,7 +283,8 @@ export async function fetchSourceUserInfoHeadersDirect(source: {
       timeoutMs: USERINFO_TIMEOUT_MS,
       maxBytes: USERINFO_MAX_BYTES,
     },
-    allowUnsafeSubscriptionSources
+    allowUnsafeSubscriptionSources,
+    source.sourceDohUrl?.trim()
   );
   return response.ok ? response.headers : undefined;
 }

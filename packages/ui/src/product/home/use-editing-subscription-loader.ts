@@ -148,6 +148,7 @@ export function useEditingSubscriptionLoader({
               const nameTemplate = (item as any).nameTemplate;
               const useProxyProviders = (item as any).useProxyProviders;
               const sourceUserAgent = (item as any).sourceUserAgent;
+              const sourceDohUrl = (item as any).sourceDohUrl;
               const proxyProviderUserAgent = (item as any).proxyProviderUserAgent;
               const userinfoUrl = (item as any).userinfoUrl;
               const userinfoUserAgent = (item as any).userinfoUserAgent;
@@ -180,6 +181,10 @@ export function useEditingSubscriptionLoader({
                   t === "url" && typeof sourceUserAgent === "string" && sourceUserAgent.trim()
                     ? sourceUserAgent.trim()
                     : undefined,
+                sourceDohUrl:
+                  t === "url" && typeof sourceDohUrl === "string" && sourceDohUrl.trim()
+                    ? sourceDohUrl.trim()
+                    : undefined,
                 proxyProviderUserAgent:
                   t === "url" && typeof proxyProviderUserAgent === "string" && proxyProviderUserAgent.trim()
                     ? proxyProviderUserAgent.trim()
@@ -206,6 +211,7 @@ export function useEditingSubscriptionLoader({
               subscriptionUserInfo?: SubscriptionUserInfo;
               useProxyProviders?: boolean;
               sourceUserAgent?: string;
+              sourceDohUrl?: string;
               proxyProviderUserAgent?: string;
               userinfoUrl?: string;
               userinfoUserAgent?: string;
@@ -276,6 +282,9 @@ export function useEditingSubscriptionLoader({
               ...(s.type === "url" && typeof s.sourceUserAgent === "string" && s.sourceUserAgent.trim()
                 ? { sourceUserAgent: s.sourceUserAgent.trim() }
                 : {}),
+              ...(s.type === "url" && typeof s.sourceDohUrl === "string" && s.sourceDohUrl.trim()
+                ? { sourceDohUrl: s.sourceDohUrl.trim() }
+                : {}),
               ...(s.type === "url" && typeof s.proxyProviderUserAgent === "string" && s.proxyProviderUserAgent.trim()
                 ? { proxyProviderUserAgent: s.proxyProviderUserAgent.trim() }
                 : {}),
@@ -341,6 +350,9 @@ export function useEditingSubscriptionLoader({
               ...(s.type === "url" && s.useProxyProviders ? { useProxyProviders: true } : {}),
               ...(s.type === "url" && typeof s.sourceUserAgent === "string" && s.sourceUserAgent.trim()
                 ? { sourceUserAgent: s.sourceUserAgent.trim() }
+                : {}),
+              ...(s.type === "url" && typeof s.sourceDohUrl === "string" && s.sourceDohUrl.trim()
+                ? { sourceDohUrl: s.sourceDohUrl.trim() }
                 : {}),
               ...(s.type === "url" && typeof s.proxyProviderUserAgent === "string" && s.proxyProviderUserAgent.trim()
                 ? { proxyProviderUserAgent: s.proxyProviderUserAgent.trim() }
