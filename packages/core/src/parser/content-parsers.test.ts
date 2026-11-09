@@ -33,6 +33,39 @@ describe("content parser registry helpers", () => {
     expect(isClashYamlContent(ssLink("proxies:"))).toBe(false);
   });
 
+  it.each(['"', "'"])("parses quoted YAML mapping keys with %s", (quote) => {
+    const key = (name: string) => `${quote}${name}${quote}`;
+    const input = [
+      `${key("port")}: 7890`,
+      `${key("proxies")}:`,
+      "  -",
+      `    ${key("name")}: Home HTTP`,
+      `    ${key("type")}: http`,
+      `    ${key("server")}: home.example.com`,
+      `    ${key("port")}: 8080`,
+      `    ${key("username")}: example-user`,
+      `    ${key("password")}: example-secret`,
+    ].join("\n");
+
+    expect(isClashYamlContent(input)).toBe(true);
+    for (const content of [input, encodeBase64(input)]) {
+      expect(parseSubscription(content)).toMatchObject({
+        totalParsed: 1, totalFailed: 0,
+        nodes: [{
+          name: "Home HTTP", type: "http", server: "home.example.com",
+          port: 8080, username: "example-user", password: "example-secret",
+        }],
+      });
+    }
+    expect(isClashYamlContent(`${key("proxy-providers")}: {}`)).toBe(true);
+    expect(isClashYamlContent(`${key("proxy-groups")}: []`)).toBe(true);
+  });
+
+  it("does not detect mismatched quotes or quoted keys inside link fragments", () => {
+    expect(isClashYamlContent('"proxies\': []')).toBe(false);
+    expect(isClashYamlContent('ss://example#"proxies":')).toBe(false);
+  });
+
   it("does not misclassify a link fragment as YAML and falls through zero-node YAML parsers", () => {
     expect(parseSubscription(ssLink("proxies:")).nodes[0]).toMatchObject({ name: "proxies:", type: "ss" });
 

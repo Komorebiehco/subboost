@@ -19,4 +19,20 @@ describe("moveSubscriptionSource", () => {
     expect(moveSubscriptionSource(sources, "a", "up")).toBe(sources);
     expect(moveSubscriptionSource(sources, "c", "down")).toBe(sources);
   });
+
+  it("inserts a source at a one-based position while retaining other sources' order", () => {
+    expect(moveSubscriptionSource(sources, "c", 1).map((source) => source.id)).toEqual(["c", "a", "b"]);
+    expect(moveSubscriptionSource(sources, "a", 3).map((source) => source.id)).toEqual(["b", "c", "a"]);
+    expect(moveSubscriptionSource(sources, "c", 2).map((source) => source.id)).toEqual(["a", "c", "b"]);
+    expect(sources.map((source) => source.id)).toEqual(["a", "b", "c"]);
+  });
+
+  it("clamps positions and ignores invalid or unchanged positions", () => {
+    expect(moveSubscriptionSource(sources, "c", 0)[0]).toBe(sources[2]);
+    expect(moveSubscriptionSource(sources, "a", 999)[2]).toBe(sources[0]);
+    for (const position of [NaN, Infinity, 1.5, 2]) {
+      expect(moveSubscriptionSource(sources, "b", position)).toBe(sources);
+    }
+    expect(moveSubscriptionSource(sources, "missing", 1)).toBe(sources);
+  });
 });

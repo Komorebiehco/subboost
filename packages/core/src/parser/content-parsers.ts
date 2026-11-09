@@ -80,7 +80,7 @@ function looksLikeInlineFlowProxyList(content: string): boolean {
 }
 
 export function isClashYamlContent(content: string): boolean {
-  if (/^(?:[ \t]*)(?:proxies|proxy-groups|proxy-providers)[ \t]*:/m.test(content)) {
+  if (/^[ \t]*(["']?)(?:proxies|proxy-groups|proxy-providers)\1[ \t]*:/m.test(content)) {
     return true;
   }
 

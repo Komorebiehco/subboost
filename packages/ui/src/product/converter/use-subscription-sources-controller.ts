@@ -217,7 +217,7 @@ export function useSubscriptionSourcesController({ mode }: Options) {
   );
 
   const moveSource = React.useCallback(
-    (sourceId: string, direction: "up" | "down") => {
+    (sourceId: string, direction: "up" | "down" | number) => {
       const nextSources = moveSubscriptionSource(sources, sourceId, direction);
       if (nextSources === sources) return;
       setSources(nextSources);

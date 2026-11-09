@@ -9,6 +9,7 @@ import { SubscriptionImportErrorBadge } from "@subboost/ui/product/converter/sub
 import { buildSourceDisplayLabel } from "@subboost/ui/product/converter/source-display-label";
 import { AddSourceMenu, SourceStatusPopover, SourceTypeChoices } from "@subboost/ui/product/converter/source-controls";
 import { SourceEditorDialog } from "@subboost/ui/product/converter/source-editor-dialog";
+import { SourceOrderInput } from "@subboost/ui/product/converter/source-order-input";
 import { useSubscriptionSourcesController } from "@subboost/ui/product/converter/use-subscription-sources-controller";
 import { sourceTypeInfo } from "./constants";
 
@@ -49,10 +50,10 @@ export function SourcesSection() {
           return (
             <div key={source.id} className="flex flex-col gap-1.5 flex-shrink-0">
               {/* Source Header */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-1">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <SourceTypeChoices value={source.type} onChange={(type) => updateSourceType(source.id, type)} />
-                  <span className="text-xs text-white/50">
+                  <span className="min-w-0 break-words text-xs text-white/50">
                     {sourceDisplayLabel}
                   </span>
                   <SourceStatusPopover source={source} nodes={sourceNodes} />
@@ -60,7 +61,12 @@ export function SourcesSection() {
                     <SubscriptionImportErrorBadge errorInfo={source.errorInfo} errorMessage={source.error} />
                   )}
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="ml-auto flex shrink-0 items-center gap-1">
+                  <SourceOrderInput
+                    position={index + 1}
+                    total={sources.length}
+                    onMove={(position) => moveSource(source.id, position)}
+                  />
                   <div className="flex flex-col">
                     <IconButton
                       label="上移"
