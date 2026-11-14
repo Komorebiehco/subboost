@@ -20,9 +20,9 @@ import {
   selectDnsAddressesAfterFakeIpRecheck,
   shouldRecheckFakeIpDnsAnswers,
 } from "@subboost/server-core/subscription/ssrf-ip";
-import { getAllowUnsafeSubscriptionSources } from "./source-import-settings";
 import { requestPinnedText, ResponseTooLargeError, type DirectHttpResponse } from "./pinned-http";
 import { resolveSourceHostname, SourceDohError } from "./source-doh";
+import { fetchWithSourceAgent } from "./source-fetch-agent";
 
 const DEFAULT_TIMEOUT_MS = 15000;
 const DEFAULT_MAX_BYTES = 10 * 1024 * 1024;
@@ -197,7 +197,7 @@ async function requestUnpinnedText(params: {
   return { status: response.status, headers, content };
 }
 
-async function fetchTextDirect(
+export async function fetchTextDirect(
   request: SourceImportTransportRequest,
   allowUnsafeSubscriptionSources: boolean,
   sourceDohUrl?: string
@@ -260,6 +260,18 @@ async function fetchTextDirect(
 }
 
 export async function importSourceUrlDirect(request: SourceImportRequest): Promise<SourceImportResult> {
+  if (request.sourceFetchMode === "agent") {
+    return importSubscriptionFromUrl(request, {
+      timeoutMs: DEFAULT_TIMEOUT_MS,
+      maxBytes: DEFAULT_MAX_BYTES,
+      fetchText: (transportRequest) => fetchWithSourceAgent(transportRequest, request.sourceDohUrl?.trim()),
+    });
+  }
+  if (request.sourceFetchMode === "browser") {
+    const message = "此来源使用浏览器当前网络，请在生成器中导入。";
+    return { ok: false, error: message, errorInfo: createSubscriptionImportErrorInfo({ category: "network", message }) };
+  }
+  const { getAllowUnsafeSubscriptionSources } = await import("./source-import-settings");
   const allowUnsafeSubscriptionSources = await getAllowUnsafeSubscriptionSources();
   return importSubscriptionFromUrl(request, {
     timeoutMs: DEFAULT_TIMEOUT_MS,
@@ -269,11 +281,24 @@ export async function importSourceUrlDirect(request: SourceImportRequest): Promi
 }
 
 export async function fetchSourceUserInfoHeadersDirect(source: {
+  sourceFetchMode?: "server" | "browser" | "agent";
   sourceDohUrl?: string;
   userinfoUrl?: string;
   userinfoUserAgent?: string;
 }): Promise<Record<string, string> | undefined> {
   if (!source.userinfoUrl) return undefined;
+  if (source.sourceFetchMode === "browser") return undefined;
+  if (source.sourceFetchMode === "agent") {
+    const response = await fetchWithSourceAgent({
+      url: source.userinfoUrl,
+      userAgent: source.userinfoUserAgent?.trim() || SUBSCRIPTION_IMPORT_USER_AGENTS[0],
+      purpose: "userinfo",
+      timeoutMs: USERINFO_TIMEOUT_MS,
+      maxBytes: USERINFO_MAX_BYTES,
+    }, source.sourceDohUrl?.trim());
+    return response.ok ? response.headers : undefined;
+  }
+  const { getAllowUnsafeSubscriptionSources } = await import("./source-import-settings");
   const allowUnsafeSubscriptionSources = await getAllowUnsafeSubscriptionSources();
   const response = await fetchTextDirect(
     {

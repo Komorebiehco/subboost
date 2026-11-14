@@ -12,6 +12,7 @@ export type SavedSource = {
   type: SavedSourceType;
   content: string;
   useProxyProviders?: boolean;
+  sourceFetchMode?: "server" | "browser" | "agent";
   sourceUserAgent?: string;
   sourceDohUrl?: string;
   proxyProviderUserAgent?: string;
@@ -97,6 +98,8 @@ export function normalizeSavedSourcesForPersistence(
       type,
       content: type === "url" ? normalizeUrlContent(content) : content,
       ...(type === "url" && record.useProxyProviders === true ? { useProxyProviders: true } : {}),
+      ...(type === "url" && record.sourceFetchMode === "browser" ? { sourceFetchMode: "browser" as const } : {}),
+      ...(type === "url" && record.sourceFetchMode === "agent" ? { sourceFetchMode: "agent" as const } : {}),
       ...(type === "url" && sourceUserAgent ? { sourceUserAgent } : {}),
       ...(type === "url" && sourceDohUrl ? { sourceDohUrl } : {}),
       ...(type === "url" && proxyProviderUserAgent ? { proxyProviderUserAgent } : {}),

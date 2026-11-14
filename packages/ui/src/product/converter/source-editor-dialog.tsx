@@ -12,6 +12,7 @@ import { Switch } from "@subboost/ui/components/ui/switch";
 import { Textarea } from "@subboost/ui/components/ui/textarea";
 import type { SubscriptionSource } from "@subboost/ui/store/config-store";
 import { sourceTypeInfo } from "./source-type-info";
+import { SourceFetchModeField } from "./source-fetch-mode-field";
 
 export type SourceEditorDialogProps = {
   source: SubscriptionSource | null;
@@ -115,6 +116,7 @@ export function SourceEditorDialog({
                   <FormField label="订阅请求 User-Agent（可选）">
                     <Input
                       value={source.sourceUserAgent ?? ""}
+                      disabled={!source.useProxyProviders && source.sourceFetchMode === "browser"}
                       onChange={(event) => onUpdateMeta(source.id, { sourceUserAgent: event.target.value })}
                       placeholder={DEFAULT_PROXY_PROVIDER_USER_AGENT}
                       className="text-xs font-mono"
@@ -122,6 +124,13 @@ export function SourceEditorDialog({
                   </FormField>
 
                   {!source.useProxyProviders ? (
+                    <SourceFetchModeField
+                      source={source}
+                      onChange={(sourceFetchMode) => onUpdateMeta(source.id, { sourceFetchMode })}
+                    />
+                  ) : null}
+
+                  {!source.useProxyProviders && source.sourceFetchMode !== "browser" ? (
                     <FormField label={
                       <span className="inline-flex items-center gap-2">
                         订阅解析 DoH（可选）
@@ -168,6 +177,7 @@ export function SourceEditorDialog({
                     <FormField label="流量信息 User-Agent（可选）">
                       <Input
                         value={source.userinfoUserAgent ?? ""}
+                        disabled={!source.useProxyProviders && source.sourceFetchMode === "browser"}
                         onChange={(event) => onUpdateMeta(source.id, { userinfoUserAgent: event.target.value })}
                         placeholder="例如 clash.meta/v1.19.16"
                         className="text-xs"

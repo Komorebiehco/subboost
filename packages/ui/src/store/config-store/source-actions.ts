@@ -281,6 +281,7 @@ export function createSourceActions(set: SetState, get: GetState, setAndGenerate
         // 如果是 url，需要先获取内容
         if (source.type === "url") {
           const fetched = await fetchUrlContentInBrowser(source.content, {
+            sourceFetchMode: source.sourceFetchMode,
             sourceUserAgent: source.sourceUserAgent,
             sourceDohUrl: source.sourceDohUrl,
             userinfoUrl: source.userinfoUrl,
@@ -400,6 +401,7 @@ export function createSourceActions(set: SetState, get: GetState, setAndGenerate
         const shouldHintProxyProviders =
           source.type === "url" &&
           !source.useProxyProviders &&
+          source.sourceFetchMode !== "browser" &&
           !/无效的 url/i.test(baseInfo.message) &&
           !/只支持 HTTP\/HTTPS/i.test(baseInfo.message) &&
           !/proxy-providers/i.test(baseInfo.message);
@@ -497,6 +499,7 @@ export function createSourceActions(set: SetState, get: GetState, setAndGenerate
           if (source.type === "url") {
             try {
               const fetched = await fetchUrlContentInBrowser(source.content, {
+                sourceFetchMode: source.sourceFetchMode,
                 sourceUserAgent: source.sourceUserAgent,
                 sourceDohUrl: source.sourceDohUrl,
                 userinfoUrl: source.userinfoUrl,
@@ -520,6 +523,7 @@ export function createSourceActions(set: SetState, get: GetState, setAndGenerate
               const baseInfo = toSubscriptionImportErrorInfo(fetchError, "未知错误");
               const shouldHintProxyProviders =
                 !source.useProxyProviders &&
+                source.sourceFetchMode !== "browser" &&
                 !/无效的 url/i.test(baseInfo.message) &&
                 !/只支持 HTTP\/HTTPS/i.test(baseInfo.message) &&
                 !/proxy-providers/i.test(baseInfo.message);

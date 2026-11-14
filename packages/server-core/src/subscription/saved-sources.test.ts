@@ -2,6 +2,15 @@ import { describe, expect, it } from "vitest";
 import { normalizeSavedSourcesForPersistence } from "./saved-sources";
 
 describe("normalizeSavedSourcesForPersistence", () => {
+  it("preserves supported fetch modes only for URL sources", () => {
+    const sources = normalizeSavedSourcesForPersistence([
+      { id: "agent", type: "url", content: "https://source.example/sub", sourceFetchMode: "agent" },
+      { id: "browser", type: "url", content: "https://source.example/sub", sourceFetchMode: "browser" },
+      { id: "invalid", type: "url", content: "https://source.example/sub", sourceFetchMode: "other" },
+      { id: "yaml", type: "yaml", content: "proxies: []", sourceFetchMode: "agent" },
+    ]);
+    expect(sources.map(s => s.sourceFetchMode)).toEqual(["agent", "browser", undefined, undefined]);
+  });
   it("normalizes URL sources and preserves supported source metadata", () => {
     expect(
       normalizeSavedSourcesForPersistence([

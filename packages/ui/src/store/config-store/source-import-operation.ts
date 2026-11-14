@@ -18,6 +18,7 @@ export function buildSourceImportFingerprint(source: SubscriptionSource): string
     typeof source.tag === "string" ? source.tag : null,
     typeof source.nameTemplate === "string" ? source.nameTemplate : null,
     source.useProxyProviders === true,
+    source.sourceFetchMode ?? "server",
     typeof source.sourceUserAgent === "string" ? source.sourceUserAgent : null,
     typeof source.sourceDohUrl === "string" ? source.sourceDohUrl : null,
     typeof source.proxyProviderUserAgent === "string" ? source.proxyProviderUserAgent : null,

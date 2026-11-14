@@ -13,6 +13,28 @@ const node: ParsedNode = {
 };
 
 describe("refreshNodeSnapshot", () => {
+  it("preserves browser-only sources while refreshing agent sources and retaining their mode", async () => {
+    const fetchUrlNodes = vi.fn(async () => ({ ok: true, nodes: [{ ...node, name: "agent node" }] }));
+    const fetchUrlUserInfo = vi.fn(async () => undefined);
+    const result = await refreshNodeSnapshot({
+      config: { sources: [
+        { id: "browser", type: "url", content: "https://browser.example/sub", sourceFetchMode: "browser",
+          userinfoUrl: "https://browser.example/info", subscriptionUserInfo: { upload: 1, total: 1024 } },
+        { id: "agent", type: "url", content: "https://agent.example/sub", sourceFetchMode: "agent" },
+      ] },
+      urls: [],
+      storedNodes: [{ ...node, name: "cached", _sourceIds: ["browser"] } as ParsedNode],
+      fetchUrlNodes, fetchUrlUserInfo,
+    });
+    expect(fetchUrlNodes).toHaveBeenCalledOnce();
+    expect(fetchUrlNodes).toHaveBeenCalledWith(expect.objectContaining({ id: "agent", sourceFetchMode: "agent" }));
+    expect(fetchUrlUserInfo).not.toHaveBeenCalledWith(expect.objectContaining({ id: "browser" }));
+    expect(result.nodes.map(n => n.name)).toEqual(["cached", "agent node"]);
+    expect(result.refreshableSourceCount).toBe(1);
+    expect(result.failedSourceCount).toBe(0);
+    expect(result.subscriptionInfo).toMatchObject({ upload: 1, total: 1024 });
+    expect(result.savedSources.map(s => s.sourceFetchMode)).toEqual(["browser", "agent"]);
+  });
   afterEach(() => {
     vi.restoreAllMocks();
   });

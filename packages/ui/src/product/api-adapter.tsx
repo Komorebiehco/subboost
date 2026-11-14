@@ -8,6 +8,7 @@ import { readJsonResponse } from "./client-response";
 
 export type SourceImportRequest = {
   url: string;
+  sourceFetchMode?: "server" | "browser" | "agent";
   sourceUserAgent?: string;
   sourceDohUrl?: string;
   userinfoUrl?: string;
@@ -88,6 +89,7 @@ export type ProductRulesApi = {
 export type ProductApiAdapter = {
   sourceImport?: {
     importSource: (request: SourceImportRequest) => Promise<SourceImportResponse>;
+    getAgentStatus?: () => Promise<{ connected: boolean }>;
   };
   templates?: ProductTemplateApi;
   rules?: ProductRulesApi;

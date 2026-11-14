@@ -22,6 +22,21 @@ import {
 } from "./definitions";
 
 describe("config store definitions", () => {
+  it("uses the browser network without a server fallback and forwards agent mode", async () => {
+    const previousFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn().mockResolvedValue(new Response(
+      "proxies:\n- { name: real, type: trojan, server: node.example, port: 443, password: secret }"
+    ));
+    try {
+      const result = await fetchUrlContentInBrowser("https://source.example/sub", { sourceFetchMode: "browser" });
+      expect(result.parseResult?.nodes).toHaveLength(1);
+      expect(mocks.importSource).not.toHaveBeenCalled();
+      await fetchUrlContentInBrowser("https://source.example/sub", { sourceFetchMode: "agent" });
+      expect(mocks.importSource).toHaveBeenCalledWith({ url: "https://source.example/sub", sourceFetchMode: "agent" });
+    } finally {
+      globalThis.fetch = previousFetch;
+    }
+  });
   beforeEach(() => {
     mocks.importSource.mockReset();
     mocks.sourceImport = { importSource: mocks.importSource };

@@ -19,6 +19,7 @@ type ExpandedSourceSnapshot = {
   tag: string;
   nameTemplate: string;
   useProxyProviders: boolean;
+  sourceFetchMode: "server" | "browser" | "agent";
   sourceUserAgent: string;
   sourceDohUrl: string;
   proxyProviderUserAgent: string;
@@ -37,6 +38,7 @@ function createExpandedSourceSnapshot(source: SubscriptionSource): ExpandedSourc
     tag: (source.tag ?? "").trim(),
     nameTemplate: (source.nameTemplate ?? "").trim(),
     useProxyProviders: Boolean(source.useProxyProviders),
+    sourceFetchMode: source.sourceFetchMode ?? "server",
     sourceUserAgent: (source.sourceUserAgent ?? "").trim(),
     sourceDohUrl: (source.sourceDohUrl ?? "").trim(),
     proxyProviderUserAgent: (source.proxyProviderUserAgent ?? "").trim(),
@@ -52,6 +54,7 @@ function changedSinceSnapshot(source: SubscriptionSource, snapshot: ExpandedSour
     next.tag !== snapshot.tag ||
     next.nameTemplate !== snapshot.nameTemplate ||
     next.useProxyProviders !== snapshot.useProxyProviders ||
+    next.sourceFetchMode !== (snapshot.sourceFetchMode ?? "server") ||
     next.sourceUserAgent !== snapshot.sourceUserAgent ||
     next.sourceDohUrl !== (snapshot.sourceDohUrl ?? "") ||
     next.proxyProviderUserAgent !== snapshot.proxyProviderUserAgent ||
@@ -65,6 +68,7 @@ function sourceMetaNeedsReimport(patch: Partial<SubscriptionSource>): boolean {
     Object.prototype.hasOwnProperty.call(patch, "tag") ||
     Object.prototype.hasOwnProperty.call(patch, "nameTemplate") ||
     Object.prototype.hasOwnProperty.call(patch, "useProxyProviders") ||
+    Object.prototype.hasOwnProperty.call(patch, "sourceFetchMode") ||
     Object.prototype.hasOwnProperty.call(patch, "sourceUserAgent") ||
     Object.prototype.hasOwnProperty.call(patch, "sourceDohUrl") ||
     Object.prototype.hasOwnProperty.call(patch, "proxyProviderUserAgent") ||
@@ -248,6 +252,7 @@ export function useSubscriptionSourcesController({ mode }: Options) {
             type,
             content: "",
             useProxyProviders: type === "url" ? Boolean(source.useProxyProviders) : undefined,
+            sourceFetchMode: type === "url" ? source.sourceFetchMode : undefined,
             sourceUserAgent: type === "url" ? source.sourceUserAgent : undefined,
             sourceDohUrl: type === "url" ? source.sourceDohUrl : undefined,
             proxyProviderUserAgent: type === "url" ? source.proxyProviderUserAgent : undefined,

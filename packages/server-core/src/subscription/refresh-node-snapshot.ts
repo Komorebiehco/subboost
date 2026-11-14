@@ -133,7 +133,7 @@ export async function refreshNodeSnapshot(
   const subscriptionInfo: SubscriptionResponseInfo = {};
   const profileWebPageUrlState: StableMetadataState = { conflicted: false };
   const planNameState: StableMetadataState = { conflicted: false };
-  const attemptedUrlFetch = savedSources.some((source) => source.type === "url" && !source.useProxyProviders);
+  const attemptedUrlFetch = savedSources.some((source) => source.type === "url" && !source.useProxyProviders && source.sourceFetchMode !== "browser");
   let usedUrlFetch = false;
   let refreshableSourceCount = 0;
   let refreshedSourceCount = 0;
@@ -201,6 +201,10 @@ export async function refreshNodeSnapshot(
   };
 
   for (const source of savedSources) {
+    if (source.type === "url" && !source.useProxyProviders && source.sourceFetchMode === "browser") {
+      mergeSubscriptionUserInfo(subscriptionInfo, normalizeSubscriptionUserInfo(source.subscriptionUserInfo));
+      continue;
+    }
     if (source.type === "url" && source.useProxyProviders) {
       const detached = detachSourceNodesFromState(currentNodes, source.id);
       if (detached.nodes.length !== currentNodes.length) {
@@ -333,7 +337,7 @@ export async function refreshNodeSnapshot(
     )
   ) {
     for (const source of savedSources) {
-      if (source.type !== "url" || source.useProxyProviders) continue;
+      if (source.type !== "url" || source.useProxyProviders || source.sourceFetchMode === "browser") continue;
       if (!shouldFetchSupplementalUserInfoForSource(source) && hasSubscriptionUserInfo(subscriptionInfo)) continue;
       const headers = await options.fetchUrlUserInfo(source);
       if (!headers) continue;

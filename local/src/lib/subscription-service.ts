@@ -328,6 +328,7 @@ export function buildSubscriptionFetchCallbacks() {
     fetchUrlNodes: async (source: SavedSource) => {
       const imported = await importSourceUrlDirect({
         url: source.content,
+        ...(source.sourceFetchMode ? { sourceFetchMode: source.sourceFetchMode } : {}),
         ...(source.sourceUserAgent ? { sourceUserAgent: source.sourceUserAgent } : {}),
         ...(source.sourceDohUrl ? { sourceDohUrl: source.sourceDohUrl } : {}),
         ...(source.userinfoUrl ? { userinfoUrl: source.userinfoUrl } : {}),

@@ -10,6 +10,12 @@ const localHomeAdapter: HomeSurfaceAdapter = {
   templateUploadHref: "/templates?upload=1",
   productApi: {
     sourceImport: {
+      getAgentStatus: async () => {
+        const response = await fetch("/api/source-fetch-agent", { cache: "no-store" });
+        if (!response.ok) throw new Error("Unable to read fetch agent status.");
+        const data = await response.json();
+        return { connected: data.connected === true };
+      },
       importSource: async (request) => {
         const data = await readSourceImportResponse(
           await fetch("/api/source-import", {

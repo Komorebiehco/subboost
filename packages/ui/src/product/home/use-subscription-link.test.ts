@@ -256,6 +256,7 @@ describe("useSubscriptionLink", () => {
                 content: "https://airport.example/sub",
                 sourceUserAgent: "Clash.Meta/1.19.24",
                 sourceDohUrl: "https://223.5.5.5/dns-query",
+                sourceFetchMode: "agent",
                 proxyProviderUserAgent: "FlClash/0.8.92",
                 userinfoUrl: "https://airport.example/userinfo",
                 userinfoUserAgent: "Clash.Meta",

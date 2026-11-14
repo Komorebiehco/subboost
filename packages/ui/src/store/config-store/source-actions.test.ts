@@ -31,6 +31,18 @@ function deferred<T>() {
 describe("createSourceActions", () => {
   beforeEach(resetSourceActionMocks);
 
+  it("rejects stale results when the fetch mode changes while importing", async () => {
+    const pending = deferred<DeferredFetchResult>();
+    mocks.fetchUrlContentInBrowser.mockReturnValueOnce(pending.promise);
+    const first = source({ id: "mode", type: "url", content: "https://one.example/sub", sourceFetchMode: "agent" });
+    const { actions, getState } = createHarness({ sources: [first], nodes: [node("Existing")] });
+    const importing = actions.parseSingleSource(first.id);
+    expect(mocks.fetchUrlContentInBrowser).toHaveBeenCalledWith(first.content, expect.objectContaining({ sourceFetchMode: "agent" }));
+    actions.setSources([{ ...first, sourceFetchMode: "browser" }]);
+    pending.resolve({ content: "new", headers: {}, parseResult: parseResult([node("Stale")]) });
+    await importing;
+    expect(getState().nodes.map((item: ParsedNode) => item.name)).toEqual(["Existing"]);
+  });
   it("moves source nodes and selected members together without changing membership", () => {
     const a = source({ id: "a" });
     const b = source({ id: "b" });

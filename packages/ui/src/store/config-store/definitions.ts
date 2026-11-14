@@ -24,6 +24,7 @@ import {
   type NodeNameFilterConfig,
 } from "@subboost/core/subscription/node-name-filter";
 import { getActiveProductApiAdapter } from "@subboost/ui/product/api-adapter";
+import { importSourceInBrowser } from "@subboost/ui/product/subscription/browser-source-import";
 import {
   getNodeSourceIds,
   makeUniqueName,
@@ -76,6 +77,7 @@ export interface SubscriptionSource {
   nameTemplate?: string;
   // URL 源使用 proxy-providers 模式：不在 SubBoost 内拉取/解析节点，仅在最终配置中写入 proxy-providers 供客户端拉取
   useProxyProviders?: boolean;
+  sourceFetchMode?: "server" | "browser" | "agent";
   // SubBoost 服务端抓取并解析订阅时优先使用的 User-Agent
   sourceUserAgent?: string;
   sourceDohUrl?: string;
@@ -99,7 +101,7 @@ export type { CustomProxyGroup };
 
 export async function fetchUrlContentInBrowser(
   url: string,
-  options?: { sourceUserAgent?: string; sourceDohUrl?: string; userinfoUrl?: string; userinfoUserAgent?: string }
+  options?: { sourceFetchMode?: "server" | "browser" | "agent"; sourceUserAgent?: string; sourceDohUrl?: string; userinfoUrl?: string; userinfoUserAgent?: string }
 ): Promise<{
   content: string;
   headers: Record<string, string>;
@@ -122,6 +124,12 @@ export async function fetchUrlContentInBrowser(
   }
 
   try {
+    if (options?.sourceFetchMode === "browser") {
+      return await importSourceInBrowser({
+        url: normalizedUrl,
+        ...(normalizedUserinfoUrl ? { userinfoUrl: normalizedUserinfoUrl } : {}),
+      });
+    }
     const sourceImport = getActiveProductApiAdapter().sourceImport;
     if (!sourceImport) {
       throw new Error("当前应用未配置 URL 导入服务");
@@ -129,6 +137,7 @@ export async function fetchUrlContentInBrowser(
 
     const data = await sourceImport.importSource({
       url: normalizedUrl,
+      ...(options?.sourceFetchMode === "agent" ? { sourceFetchMode: "agent" as const } : {}),
       ...(typeof options?.sourceUserAgent === "string" && options.sourceUserAgent.trim()
         ? { sourceUserAgent: options.sourceUserAgent.trim() }
         : {}),

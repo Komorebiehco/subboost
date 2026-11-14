@@ -178,6 +178,8 @@ export function useEditingSubscriptionLoader({
                 nameTemplate: typeof nameTemplate === "string" && nameTemplate.trim() ? nameTemplate.trim() : undefined,
                 subscriptionUserInfo: hasSubscriptionUserInfo(subscriptionUserInfo) ? subscriptionUserInfo : undefined,
                 useProxyProviders: t === "url" && useProxyProviders === true ? true : undefined,
+                sourceFetchMode: t === "url" && ["browser", "agent"].includes((item as any).sourceFetchMode)
+                  ? (item as any).sourceFetchMode as "browser" | "agent" : undefined,
                 sourceUserAgent:
                   t === "url" && typeof sourceUserAgent === "string" && sourceUserAgent.trim()
                     ? sourceUserAgent.trim()
@@ -211,6 +213,7 @@ export function useEditingSubscriptionLoader({
               nameTemplate?: string;
               subscriptionUserInfo?: SubscriptionUserInfo;
               useProxyProviders?: boolean;
+              sourceFetchMode?: "server" | "browser" | "agent";
               sourceUserAgent?: string;
               sourceDohUrl?: string;
               proxyProviderUserAgent?: string;
@@ -280,6 +283,8 @@ export function useEditingSubscriptionLoader({
               ...(typeof s.nameTemplate === "string" && s.nameTemplate.trim() ? { nameTemplate: s.nameTemplate.trim() } : {}),
               ...(hasSubscriptionUserInfo(s.subscriptionUserInfo) ? { subscriptionUserInfo: s.subscriptionUserInfo } : {}),
               ...(s.type === "url" && s.useProxyProviders ? { useProxyProviders: true } : {}),
+              ...(s.type === "url" && s.sourceFetchMode === "browser" ? { sourceFetchMode: "browser" as const } : {}),
+              ...(s.type === "url" && s.sourceFetchMode === "agent" ? { sourceFetchMode: "agent" as const } : {}),
               ...(s.type === "url" && typeof s.sourceUserAgent === "string" && s.sourceUserAgent.trim()
                 ? { sourceUserAgent: s.sourceUserAgent.trim() }
                 : {}),
@@ -349,6 +354,8 @@ export function useEditingSubscriptionLoader({
               ...(typeof s.nameTemplate === "string" && s.nameTemplate.trim() ? { nameTemplate: s.nameTemplate.trim() } : {}),
               ...(hasSubscriptionUserInfo(subscriptionUserInfo) ? { subscriptionUserInfo } : {}),
               ...(s.type === "url" && s.useProxyProviders ? { useProxyProviders: true } : {}),
+              ...(s.type === "url" && s.sourceFetchMode === "browser" ? { sourceFetchMode: "browser" as const } : {}),
+              ...(s.type === "url" && s.sourceFetchMode === "agent" ? { sourceFetchMode: "agent" as const } : {}),
               ...(s.type === "url" && typeof s.sourceUserAgent === "string" && s.sourceUserAgent.trim()
                 ? { sourceUserAgent: s.sourceUserAgent.trim() }
                 : {}),
