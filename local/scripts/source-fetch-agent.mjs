@@ -21,7 +21,7 @@ const loader = await createServer({
   configFile: false,
   root,
   cacheDir: path.join(runtimeDir, "vite"),
-  server: { middlewareMode: true, watch: null },
+  server: { middlewareMode: true, watch: null, hmr: false, ws: false },
   resolve: {
     alias: {
       "@local": path.join(root, "local/src"),
