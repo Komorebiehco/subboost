@@ -195,6 +195,12 @@ describe("auth config handoff", () => {
     });
   });
 
+  it("preserves the shared node pool when it is the only config change", () => {
+    installStorage(createStorage());
+    captureAuthConfigHandoff({ ...structuredClone(initialState), sharedNodeProvider: true } as any);
+    expect(consumeAuthConfigHandoff()).toMatchObject({ sharedNodeProvider: true });
+  });
+
   it("cleans up expired, malformed, and unwritable handoff data", () => {
     vi.spyOn(Date, "now").mockReturnValue(1_700_000_700_001);
     const expired = createStorage({
@@ -286,6 +292,7 @@ describe("auth config handoff", () => {
           allowLan: true,
           testUrl: "https://test.example.com",
           testInterval: Number.NaN,
+          sharedNodeProvider: "true",
           ruleProviderBaseUrl: "https://rules.example.com",
           cnIpNoResolve: false,
           experimentalCnUseCnRuleSet: true,

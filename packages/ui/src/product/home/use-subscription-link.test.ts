@@ -230,6 +230,7 @@ describe("useSubscriptionLink", () => {
   });
 
   it("saves a normalized subscription payload and tracks success", async () => {
+    mocks.bag.storeState.sharedNodeProvider = true;
     const adapter = makeAdapter();
     let hook = useRenderedHook({ subscriptionAdapter: adapter });
     hook.setSubscriptionName(" My Sub ");
@@ -265,6 +266,7 @@ describe("useSubscriptionLink", () => {
             ],
             proxyGroupAdvanced: { auto: { includeRegex: "Fast" } },
             proxyGroupAdvancedModeEnabled: true,
+            sharedNodeProvider: true,
             listenerPorts: { "Node A": 41000 },
             groupListeners: [{ id: "gl-1", target: { kind: "module", id: "auto" }, port: 7891 }],
             proxyGroupOrder: ["select", "auto"],

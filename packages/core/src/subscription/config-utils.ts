@@ -322,6 +322,7 @@ export function buildGenerateOptionsFromConfig(
   });
 
   const userConfig: Partial<UserConfig> = {
+    sharedNodeProvider: config.sharedNodeProvider === true,
     ...(enabledGroups ? { enabledGroups } : {}),
     ...(enabledRules ? { enabledRules } : {}),
     ...(customRules ? { customRules } : {}),

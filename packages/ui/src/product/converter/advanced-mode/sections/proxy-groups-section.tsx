@@ -3,6 +3,8 @@
 import * as React from "react";
 import { Layers } from "lucide-react";
 import { Badge } from "@subboost/ui/components/ui/badge";
+import { Switch } from "@subboost/ui/components/ui/switch";
+import { Label } from "@subboost/ui/components/ui/label";
 import { PROXY_GROUP_MODULES } from "@subboost/core/generator/proxy-groups";
 import { useConfigStore } from "@subboost/ui/store/config-store";
 import { SectionHeader } from "../section-header";
@@ -15,7 +17,7 @@ export function ProxyGroupsSection({
   isExpanded: boolean;
   onToggle: () => void;
 }) {
-  const { enabledProxyGroups, hiddenProxyGroups } = useConfigStore();
+  const { enabledProxyGroups, hiddenProxyGroups, sharedNodeProvider, setSharedNodeProvider } = useConfigStore();
   const hiddenIds = new Set(hiddenProxyGroups);
   const enabledCount = enabledProxyGroups.filter((id) => !hiddenIds.has(id)).length;
   const totalCount = PROXY_GROUP_MODULES.filter((module) => !hiddenIds.has(module.id)).length;
@@ -36,6 +38,10 @@ export function ProxyGroupsSection({
 
       {isExpanded && (
         <div className="mt-2 space-y-2 pl-6">
+          <div className="flex items-center justify-between gap-3 py-2">
+            <Label htmlFor="shared-node-provider">共用节点池</Label>
+            <Switch id="shared-node-provider" aria-label="共用节点池" checked={sharedNodeProvider} onCheckedChange={setSharedNodeProvider} />
+          </div>
           <ProxyGroupsCategories />
         </div>
       )}

@@ -38,6 +38,7 @@ import { isMihomoSupportedProxyNode, normalizeMihomoVlessForGeneration } from ".
 import { chooseFallbackPolicyTarget, withBuiltinPolicyTargets } from "./policy-targets";
 import { resolveGroupListenerEntries, type GroupListenerTargetResolution } from "./group-listeners";
 import { orderDialerGroupsByNodes } from "../subscription/node-source-order";
+import { withSharedNodeProvider } from "./shared-node-provider";
 
 export interface GenerateOptions {
   nodes: ParsedNode[];
@@ -595,7 +596,8 @@ export function generateClashConfig(options: GenerateOptions): ClashConfig {
     }),
   };
 
-  return clashConfig as unknown as ClashConfig;
+  const generated = clashConfig as unknown as ClashConfig;
+  return config.sharedNodeProvider === true ? withSharedNodeProvider(generated) : generated;
 }
 
 /**

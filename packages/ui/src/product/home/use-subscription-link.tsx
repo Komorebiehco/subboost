@@ -408,6 +408,7 @@ export function useSubscriptionLink({
             ruleProviderBaseUrl,
             testUrl,
             testInterval,
+            sharedNodeProvider: useConfigStore.getState().sharedNodeProvider === true,
             cnIpNoResolve,
             experimentalCnUseCnRuleSet,
             autoSelectStrategy: "url-test",

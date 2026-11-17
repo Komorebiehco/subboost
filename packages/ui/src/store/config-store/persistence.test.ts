@@ -9,6 +9,12 @@ import {
 } from "./persistence";
 
 describe("config store persistence", () => {
+  it("keeps shared pool opt-in when saving and restoring a draft", () => {
+    const persisted = partializeConfigState({ ...initialState, sharedNodeProvider: true });
+    expect(normalizePersistedConfigState(persisted).sharedNodeProvider).toBe(true);
+    expect(normalizePersistedConfigState({}).sharedNodeProvider).toBe(false);
+    expect(normalizePersistedConfigState({ sharedNodeProvider: "true" }).sharedNodeProvider).toBe(false);
+  });
   it("round-trips the normalized node-name filter without persisting node snapshots", () => {
     const state = {
       ...structuredClone(initialState),
