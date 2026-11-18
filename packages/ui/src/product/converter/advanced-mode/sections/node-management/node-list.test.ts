@@ -167,6 +167,19 @@ describe("NodeManagementNodeList", () => {
     expect(html).toContain("源名: Deleted");
   });
 
+  it("bounds initial active and deleted rows for a large subscription", () => {
+    const nodes = Array.from({ length: 1061 }, (_, i) => ({ ...alpha, name: `Node ${i}` }));
+    const deleted = Array.from({ length: 249 }, (_, i) => ({ originName: `Deleted ${i}`, name: `Old ${i}` }));
+    const props = makeProps({ nodes, visibleNodes: nodes, deletedMarkedNodes: deleted, visibleDeletedMarkedNodes: deleted });
+    const html = renderToStaticMarkup(React.createElement(NodeManagementNodeList, props));
+
+    expect(html).toContain('title="Node 0"');
+    expect(html).toContain('title="Old 0"');
+    expect(html).not.toContain('title="Node 1060"');
+    expect(html).not.toContain('title="Old 248"');
+    expect(vi.mocked(props.resolveNodeNameParts).mock.calls.length).toBeLessThan(30);
+  });
+
   it("handles list actions for rename, listener ports, ordering, delete, and restore", () => {
     const props = makeProps();
     const tree = renderTree(props);

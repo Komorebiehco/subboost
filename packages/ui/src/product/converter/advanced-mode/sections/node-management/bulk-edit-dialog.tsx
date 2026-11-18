@@ -76,7 +76,7 @@ export function NodeManagementBulkEditDialog({
     let matchedCount = 0;
     let skippedCount = 0;
 
-    for (const node of nodes) {
+    for (const node of open ? nodes : []) {
       const oldName = (node?.name || "").toString();
       if (!oldName) continue;
       if (include.re && !include.re.test(oldName)) continue;
@@ -155,6 +155,7 @@ export function NodeManagementBulkEditDialog({
     nameRulesReplace,
     nameRulesTrim,
     nodes,
+    open,
     resolveNodeNameParts,
   ]);
 

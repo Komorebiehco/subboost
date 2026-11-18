@@ -10,6 +10,7 @@ import { toast } from "@subboost/ui/components/ui/toaster";
 import { formatNodeNameFromTemplate } from "@subboost/core/node-name-template";
 import { cn } from "@subboost/ui/lib/utils";
 import type { ParsedNode } from "@subboost/core/types/node";
+import { renderNodeRows } from "./node-row-pages";
 
 type NodeNameParts = {
   baseName: string;
@@ -85,8 +86,8 @@ export function NodeManagementNodeList({
           ) : nodeSearchKeyword.trim() && visibleNodes.length === 0 && visibleDeletedMarkedNodes.length === 0 ? (
             <div className="text-xs text-white/40 py-4 text-center">未找到匹配节点</div>
           ) : (
-            <div className={NODE_LIST_HEIGHT_CLASS}>
-              {visibleNodes.map((node) => {
+            <div key={nodeSearchKeyword.trim().toLowerCase()} data-node-list-viewport="" className={NODE_LIST_HEIGHT_CLASS}>
+              {renderNodeRows(visibleNodes, 36, (node) => {
                 const parts = resolveNodeNameParts(node);
                 const primaryTag = parts.canEditBase ? parts.tag : "";
                 const record = node as unknown as Record<string, unknown>;
@@ -340,7 +341,7 @@ export function NodeManagementNodeList({
                     已删除节点（不会生成到配置；点击“恢复”可立即恢复；若缺少来源信息可能需要重新导入）
                   </div>
                   <div className="space-y-1">
-                    {visibleDeletedMarkedNodes.map(({ originName, name }) => (
+                    {renderNodeRows(visibleDeletedMarkedNodes, 43, ({ originName, name }) => (
                       <div
                         key={`deleted:${originName}`}
                         className="flex items-center gap-2 text-xs bg-red-500/10 border border-red-500/20 rounded px-2 py-1.5"

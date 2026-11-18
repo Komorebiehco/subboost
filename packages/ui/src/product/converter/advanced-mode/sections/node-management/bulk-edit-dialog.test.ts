@@ -196,6 +196,14 @@ describe("NodeManagementBulkEditDialog", () => {
     expect(props.onOpenChange).toHaveBeenCalledWith(false);
   });
 
+  it("only builds the node plan when the dialog opens", () => {
+    const resolve = vi.fn(resolveNodeNameParts);
+    renderDialog({}, { open: false, resolveNodeNameParts: resolve });
+    expect(resolve).not.toHaveBeenCalled();
+    renderDialog({}, { open: true, resolveNodeNameParts: resolve });
+    expect(resolve).toHaveBeenCalledTimes(nodes.length);
+  });
+
   it("shows regex errors, skipped nodes, empty names, and no-match previews", () => {
     const invalidRegexResult = renderDialog({ 0: "[", 2: "(" });
     expect(invalidRegexResult.html).toContain("无效正则");
