@@ -63,6 +63,7 @@ vi.mock("lucide-react", () => ({
   ChevronDown: () => null,
   ChevronRight: () => null,
   Link: () => null,
+  ListChecks: () => null,
   Pencil: () => null,
   Plus: () => null,
   Search: () => null,
@@ -503,6 +504,54 @@ describe("DialerProxyGroupsSection", () => {
     expect(setters[6]).toHaveBeenCalledWith(expect.any(Function));
     expect(relayInput.disabled).toBe(false);
     expect(targetInput.disabled).toBe(false);
+  });
+
+  it("adds only matching real entries in one update, preserving existing names and order", () => {
+    const names = ["已选其他", "西瓜 01", "西瓜 02", "西瓜 03", "西瓜 自用出口", "西瓜 已占用出口", "西瓜 隐藏"];
+    mocks.store.nodes = names.map((name) => ({ name, type: "ss" }));
+    mocks.store.nodeNameFilter = { enabled: true, excludeRegexes: ["隐藏"] };
+    mocks.store.customProxyGroups = [{ name: "西瓜 其他组", enabled: true }];
+    mocks.store.dialerProxyGroups = [
+      { ...groupA, relayNodes: ["DIRECT", "已选其他", "西瓜 01"], targetNodes: ["西瓜 自用出口"] },
+      { ...groupB, enabled: true, relayNodes: ["西瓜 03"], targetNodes: ["西瓜 已占用出口"] },
+    ];
+    renderSection({ 0: new Set(["g-a", "g-b"]), 5: { "g-a": " 西瓜 " } });
+    const buttons = mocks.captures.buttons.filter((p: any) => p["aria-label"] === "全选匹配的中转节点");
+    expect(buttons.map((p: any) => p.disabled)).toEqual([false, true]);
+    buttons[0].onClick();
+    expect(mocks.store.updateDialerProxyGroup.mock.calls).toEqual([["g-a", {
+      relayNodes: ["DIRECT", "已选其他", "西瓜 01", "西瓜 02", "西瓜 03"],
+    }]]);
+    expect(mocks.store.addNodeToDialerGroup).not.toHaveBeenCalled();
+    mocks.store.dialerProxyGroups[0].relayNodes = mocks.store.updateDialerProxyGroup.mock.calls[0][1].relayNodes;
+    renderSection({ 0: new Set(["g-a"]), 5: { "g-a": "西瓜" } });
+    expect(mocks.captures.buttons.find((p: any) => p["aria-label"] === "全选匹配的中转节点").disabled).toBe(true);
+  });
+
+  it("skips blocked exits, preserves off-filter selections and does not change entry membership", () => {
+    const names = ["Other", "Exit B", "Exit A", "Exit Taken", "Exit Relay", "Exit Own Entry", "Exit Inactive", "Exit Hidden"];
+    mocks.store.nodes = names.map((name) => ({ name, type: "ss" }));
+    mocks.store.nodeNameFilter = { enabled: true, excludeRegexes: ["Hidden"] };
+    mocks.store.dialerProxyGroups = [
+      { ...groupA, relayNodes: ["Exit Own Entry"], targetNodes: ["Other", "Exit A"] },
+      { ...groupB, enabled: true, relayNodes: ["Exit Relay"], targetNodes: ["Exit Taken"] },
+      { ...groupB, id: "off", relayNodes: [], targetNodes: ["Exit Inactive"] },
+    ];
+    renderSection({ 0: new Set(["g-a"]), 6: { "g-a": "eXiT" } });
+    const button = mocks.captures.buttons.find((p: any) => p["aria-label"] === "全选匹配的落地节点");
+    expect(button.disabled).toBe(false);
+    button.onClick();
+    expect(mocks.store.updateDialerProxyGroup.mock.calls).toEqual([["g-a", { targetNodes: ["Other", "Exit A", "Exit B", "Exit Inactive"] }]]);
+    expect(findIntrinsics("button", p => p.disabled && textOf(p.children).includes("已被其他组使用"))).toHaveLength(2);
+  });
+
+  it.each(["", "   ", "no match", "direct", "Auto Override", "Custom"])("does not bulk select for %j without eligible nodes", query => {
+    renderSection({ 0: new Set(["g-a"]), 5: { "g-a": query }, 6: { "g-a": query } });
+    for (const button of mocks.captures.buttons.filter((p: any) => p["aria-label"]?.startsWith("全选匹配"))) {
+      expect(button.disabled).toBe(true);
+      button.onClick();
+    }
+    expect(mocks.store.updateDialerProxyGroup).not.toHaveBeenCalled();
   });
 
   it("toggles expansion and relay or target membership from native rows", () => {

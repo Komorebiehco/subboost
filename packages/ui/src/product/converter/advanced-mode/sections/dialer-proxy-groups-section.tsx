@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronDown, ChevronRight, Link as LinkIcon, Pencil, Plus, Search, SlidersHorizontal, Trash2, X } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Link as LinkIcon, ListChecks, Pencil, Plus, Search, SlidersHorizontal, Trash2, X } from "lucide-react";
 import { Badge } from "@subboost/ui/components/ui/badge";
 import { Button } from "@subboost/ui/components/ui/button";
 import { confirmDialog } from "@subboost/ui/components/ui/confirm-dialog";
@@ -42,10 +42,65 @@ import { findGroupListenerBinding } from "./group-listener-settings";
 type DialerSelectableNode = {
   name: string;
   type: string;
+  isReference?: boolean;
 };
 
-const DIRECT_RELAY_OPTION: DialerSelectableNode = { name: "DIRECT", type: "DIRECT" };
+const DIRECT_RELAY_OPTION: DialerSelectableNode = { name: "DIRECT", type: "DIRECT", isReference: true };
 const DIALER_NODE_LIST_HEIGHT_CLASS = "max-h-56 overflow-y-auto custom-scrollbar space-y-1";
+
+function pendingNodeNames(
+  matches: readonly DialerSelectableNode[],
+  selected: ReadonlySet<string>,
+  blocked?: ReadonlySet<string>,
+): string[] {
+  const names = new Set<string>();
+  for (const node of matches) {
+    if (!node.isReference && !selected.has(node.name) && !blocked?.has(node.name)) names.add(node.name);
+  }
+  return [...names];
+}
+
+function DialerNodeSearch({
+  side, value, onChange, disabled, pending, onSelect,
+}: {
+  side: "中转" | "落地";
+  value: string;
+  onChange: (value: string) => void;
+  disabled: boolean;
+  pending: string[];
+  onSelect: (names: string[]) => void;
+}) {
+  const label = `全选匹配的${side}节点`;
+  return (
+    <div className="flex w-full min-w-0 items-center gap-1.5 sm:max-w-[285px]">
+      <div className="relative min-w-0 flex-1">
+        <Search aria-hidden="true" className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/30" />
+        <Input
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={`搜索${side}节点...`}
+          aria-label={`搜索${side}节点`}
+          disabled={disabled}
+          className="h-7 border-white/10 bg-white/5 pl-7 text-xs"
+          onClick={(event) => event.stopPropagation()}
+        />
+      </div>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-7 shrink-0 gap-1 px-2 text-xs"
+        aria-label={label}
+        title={!value.trim() ? "请先输入搜索词" : pending.length ? `${label}（可新增 ${pending.length} 个）` : "没有待选的匹配节点"}
+        disabled={pending.length === 0}
+        onClick={() => { if (pending.length) onSelect(pending); }}
+      >
+        <ListChecks aria-hidden="true" className="h-3.5 w-3.5" />
+        全选匹配项
+      </Button>
+    </div>
+  );
+}
 
 export function DialerProxyGroupsSection({
   isExpanded,
@@ -175,6 +230,7 @@ export function DialerProxyGroupsSection({
           ({
             name: resolveModuleFullName(module),
             type: "内置组",
+            isReference: true,
           }) as DialerSelectableNode,
       ),
       ...customProxyGroups
@@ -182,6 +238,7 @@ export function DialerProxyGroupsSection({
         .map((group) => ({
           name: typeof group.name === "string" ? group.name.trim() : "",
           type: "自定义组",
+          isReference: true,
         }))
         .filter((group) => group.name),
     ];
@@ -234,17 +291,24 @@ export function DialerProxyGroupsSection({
                 : getProxyGroupTypeLabel(dialerGroupType);
             const relaySearchKeyword = (relaySearchByGroupId[group.id] ?? "").trim().toLowerCase();
             const targetSearchKeyword = (targetSearchByGroupId[group.id] ?? "").trim().toLowerCase();
-            const availableRelayNodes = getAvailableRelayNodes(group.id);
+            const expanded = expandedDialerGroups.has(group.id);
+            const relaySelection = new Set(group.relayNodes);
+            const targetSelection = new Set(group.targetNodes);
+            const availableRelayNodes = expanded ? getAvailableRelayNodes(group.id) : [];
             const visibleRelayNodes = relaySearchKeyword
               ? availableRelayNodes.filter((node) => {
                   const displayName = node.name === "DIRECT" ? "DIRECT（直连）" : node.name;
                   return displayName.toLowerCase().includes(relaySearchKeyword);
                 })
               : availableRelayNodes;
-            const availableTargetNodes = effectiveNodes.filter((node) => !group.relayNodes.includes(node.name));
+            const availableTargetNodes = expanded ? effectiveNodes.filter((node) => !relaySelection.has(node.name)) : [];
             const visibleTargetNodes = targetSearchKeyword
               ? availableTargetNodes.filter((node) => node.name.toLowerCase().includes(targetSearchKeyword))
               : availableTargetNodes;
+            // A target cannot also be an entry or an exit for another enabled group.
+            const blockedTargets = new Set(expanded ? dialerProxyGroups
+              .filter((other) => other.id !== group.id && other.enabled !== false)
+              .flatMap((other) => [...other.targetNodes, ...other.relayNodes]) : []);
 
             const commitRename = () => {
               const nextName = buildProxyGroupName(editingDialerGroupDraft);
@@ -457,29 +521,24 @@ export function DialerProxyGroupsSection({
               </div>
 
               {/* 展开的组内容 */}
-              {expandedDialerGroups.has(group.id) && (
+              {expanded && (
                 <div className="px-3 pb-3 space-y-3 border-t border-white/10">
                   {/* 中转节点选择 */}
                   <div className="mt-3">
                     <div className="mb-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <p className="text-xs text-white/50">中转节点（流量入口）</p>
-                      <div className="relative w-full sm:max-w-[220px]">
-                        <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/30" />
-                        <Input
-                          value={relaySearchByGroupId[group.id] ?? ""}
-                          onChange={(e) =>
-                            setRelaySearchByGroupId((prev) => ({ ...prev, [group.id]: e.target.value }))
-                          }
-                          placeholder="搜索中转节点..."
-                          disabled={availableRelayNodes.length === 0}
-                          className="h-7 bg-white/5 pl-7 text-xs border-white/10"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </div>
+                      <DialerNodeSearch
+                        side="中转"
+                        value={relaySearchByGroupId[group.id] ?? ""}
+                        onChange={(value) => setRelaySearchByGroupId((prev) => ({ ...prev, [group.id]: value }))}
+                        disabled={availableRelayNodes.length === 0}
+                        pending={relaySearchKeyword ? pendingNodeNames(visibleRelayNodes, relaySelection) : []}
+                        onSelect={(names) => updateDialerProxyGroup(group.id, { relayNodes: [...group.relayNodes, ...names] })}
+                      />
                     </div>
                     <div className={DIALER_NODE_LIST_HEIGHT_CLASS}>
                       {visibleRelayNodes.map((node) => {
-                        const isSelected = group.relayNodes.includes(node.name);
+                        const isSelected = relaySelection.has(node.name);
                         const displayName = node.name === "DIRECT" ? "DIRECT（直连）" : node.name;
                         return (
                           <button
@@ -527,27 +586,19 @@ export function DialerProxyGroupsSection({
                   <div>
                     <div className="mb-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <p className="text-xs text-white/50">落地节点（流量出口）</p>
-                      <div className="relative w-full sm:max-w-[220px]">
-                        <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/30" />
-                        <Input
-                          value={targetSearchByGroupId[group.id] ?? ""}
-                          onChange={(e) =>
-                            setTargetSearchByGroupId((prev) => ({ ...prev, [group.id]: e.target.value }))
-                          }
-                          placeholder="搜索落地节点..."
-                          disabled={availableTargetNodes.length === 0}
-                          className="h-7 bg-white/5 pl-7 text-xs border-white/10"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </div>
+                      <DialerNodeSearch
+                        side="落地"
+                        value={targetSearchByGroupId[group.id] ?? ""}
+                        onChange={(value) => setTargetSearchByGroupId((prev) => ({ ...prev, [group.id]: value }))}
+                        disabled={availableTargetNodes.length === 0}
+                        pending={targetSearchKeyword ? pendingNodeNames(visibleTargetNodes, targetSelection, blockedTargets) : []}
+                        onSelect={(names) => updateDialerProxyGroup(group.id, { targetNodes: [...group.targetNodes, ...names] })}
+                      />
                     </div>
                     <div className={DIALER_NODE_LIST_HEIGHT_CLASS}>
                       {visibleTargetNodes.map((node) => {
-                          const isSelected = group.targetNodes.includes(node.name);
-                          // 检查是否被其他组使用
-                          const usedByOther = dialerProxyGroups.some(
-                            (g) => g.id !== group.id && g.enabled !== false && g.targetNodes.includes(node.name)
-                          );
+                          const isSelected = targetSelection.has(node.name);
+                          const usedByOther = !isSelected && blockedTargets.has(node.name);
                           return (
                             <button
                               type="button"
