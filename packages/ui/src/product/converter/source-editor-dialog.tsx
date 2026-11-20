@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { HelpCircle } from "lucide-react";
 import { DEFAULT_NODE_NAME_TEMPLATE } from "@subboost/core/node-name-template";
 import { DEFAULT_PROXY_PROVIDER_USER_AGENT } from "@subboost/core/subscription/proxy-providers";
@@ -29,9 +30,23 @@ export function SourceEditorDialog({
   onUpdateContent,
   onUpdateMeta,
 }: SourceEditorDialogProps) {
+  const opener = useRef<HTMLElement | null>(null);
   return (
     <Dialog open={Boolean(source)} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-4xl">
+      <DialogContent
+        data-source-editor=""
+        className="w-[calc(100vw-2rem)] sm:max-w-4xl"
+        onOpenAutoFocus={() => {
+          opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        }}
+        onCloseAutoFocus={(event) => {
+          if (opener.current?.isConnected) {
+            event.preventDefault();
+            opener.current.focus({ preventScroll: true });
+          }
+          opener.current = null;
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{source ? `高级编辑：${sourceTypeInfo[source.type].label}` : "高级编辑"}</DialogTitle>
         </DialogHeader>
@@ -70,6 +85,8 @@ export function SourceEditorDialog({
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <Input
                       value={source.content}
+                      spellCheck={false}
+                      autoCapitalize="none"
                       onChange={(event) => onUpdateContent(source.id, event.target.value)}
                       placeholder={sourceTypeInfo[source.type].placeholder}
                       className="w-full min-w-0 flex-1 text-xs"
@@ -192,6 +209,8 @@ export function SourceEditorDialog({
               ) : (
                 <Textarea
                   value={source.content}
+                  spellCheck={false}
+                  autoCapitalize="none"
                   onChange={(event) => onUpdateContent(source.id, event.target.value)}
                   placeholder={sourceTypeInfo[source.type].placeholder}
                   className="min-h-[60vh] text-xs font-mono"

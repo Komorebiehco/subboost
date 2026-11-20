@@ -67,8 +67,8 @@ export function createHarness(overrides: Record<string, unknown> = {}) {
   };
 
   const set = (partial: any) => applyPatch(typeof partial === "function" ? partial(state) : partial);
-  const setAndGenerateConfig = (updater: any) => applyPatch(updater(state));
+  const setAndGenerateConfig = vi.fn((updater: any) => applyPatch(updater(state)));
   const actions = createSourceActions(set, () => state, setAndGenerateConfig);
 
-  return { actions, getState: () => state };
+  return { actions, getState: () => state, setAndGenerateConfig };
 }

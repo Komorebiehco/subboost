@@ -92,7 +92,16 @@ export function createSourceActions(set: SetState, get: GetState, setAndGenerate
   return {
     // 设置订阅源
     setSources: (sources: SubscriptionSource[]) => {
-      const prev = get().sources;
+      const state = get();
+      const prev = state.sources;
+      const appended = sources[prev.length];
+      // An empty appended draft contributes neither a provider nor nodes to the generated config.
+      if (sources.length === prev.length + 1 && appended.content === "" &&
+          prev.every((source, index) => source === sources[index]) &&
+          !state.nodes.some((node) => getNodeSourceIds(node).includes(appended.id))) {
+        set({ sources });
+        return;
+      }
       const prevIds = new Set(prev.map((s) => s.id));
       const nextIds = new Set(sources.map((s) => s.id));
       const removed = new Set(Array.from(prevIds).filter((id) => !nextIds.has(id)));

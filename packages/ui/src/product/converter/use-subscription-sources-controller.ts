@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useShallow } from "zustand/react/shallow";
 import { DEFAULT_NODE_NAME_TEMPLATE, formatNodeNameFromTemplate } from "@subboost/core/node-name-template";
 import { normalizeSubscriptionImportErrorInfo } from "@subboost/core/subscription/import-error";
 import type { ParsedNode } from "@subboost/core/types/node";
@@ -78,28 +79,20 @@ function sourceMetaNeedsReimport(patch: Partial<SubscriptionSource>): boolean {
 }
 
 export function useSubscriptionSourcesController({ mode }: Options) {
-  const { nodes, parseErrors, sources, setSources, parseSingleSource } = useConfigStore();
+  const { nodes, parseErrors, sources, setSources, parseSingleSource } = useConfigStore(useShallow(
+    ({ nodes, parseErrors, sources, setSources, parseSingleSource }) => ({ nodes, parseErrors, sources, setSources, parseSingleSource })
+  ));
   const { user } = useUserStore();
   const interactions = useProductInteractionAdapter();
 
   const [showAddMenu, setShowAddMenu] = React.useState(false);
-  const [expandedSourceId, setExpandedSourceId] = React.useState<string | null>(null);
-  const expandedSource = React.useMemo(
-    () => sources.find((source) => source.id === expandedSourceId) ?? null,
-    [expandedSourceId, sources]
-  );
   const [expandedSourceSnapshot, setExpandedSourceSnapshot] = React.useState<ExpandedSourceSnapshot | null>(null);
-
-  React.useEffect(() => {
-    if (!expandedSource) {
-      setExpandedSourceSnapshot(null);
-      return;
-    }
-    setExpandedSourceSnapshot((prev) => {
-      if (prev?.id === expandedSource.id) return prev;
-      return createExpandedSourceSnapshot(expandedSource);
-    });
-  }, [expandedSource]);
+  const expandedSource = expandedSourceSnapshot
+    ? sources.find((source) => source.id === expandedSourceSnapshot.id) ?? null : null;
+  const openSourceEditor = React.useCallback((sourceId: string) => {
+    const source = useConfigStore.getState().sources.find((item) => item.id === sourceId);
+    if (source) setExpandedSourceSnapshot(createExpandedSourceSnapshot(source));
+  }, []);
 
   React.useEffect(() => {
     if (mode !== "advanced" || sources.length > 0) return;
@@ -143,16 +136,17 @@ export function useSubscriptionSourcesController({ mode }: Options) {
   }, [nodes]);
 
   const closeExpandedSourceEditor = React.useCallback(() => {
+    const current = expandedSourceSnapshot
+      ? useConfigStore.getState().sources.find((item) => item.id === expandedSourceSnapshot.id)
+      : null;
     if (
-      expandedSource &&
-      expandedSourceSnapshot?.id === expandedSource.id &&
-      !expandedSource.parsing &&
-      changedSinceSnapshot(expandedSource, expandedSourceSnapshot)
+      current && expandedSourceSnapshot && !current.parsing &&
+      changedSinceSnapshot(current, expandedSourceSnapshot)
     ) {
-      void parseSingleSource(expandedSource.id);
+      void parseSingleSource(current.id);
     }
-    setExpandedSourceId(null);
-  }, [expandedSource, expandedSourceSnapshot, parseSingleSource]);
+    setExpandedSourceSnapshot(null);
+  }, [expandedSourceSnapshot, parseSingleSource]);
 
   const addSource = React.useCallback(
     (type: SourceType = "url") => {
@@ -184,14 +178,16 @@ export function useSubscriptionSourcesController({ mode }: Options) {
 
   const removeSource = React.useCallback(
     (id: string) => {
+      const { sources } = useConfigStore.getState();
       if (sources.length <= 1) return;
       setSources(sources.filter((source) => source.id !== id));
     },
-    [setSources, sources]
+    [setSources]
   );
 
   const updateSource = React.useCallback(
     (id: string, content: string) => {
+      const { sources } = useConfigStore.getState();
       setSources(
         sources.map((source) => {
           if (source.id !== id) return source;
@@ -200,11 +196,12 @@ export function useSubscriptionSourcesController({ mode }: Options) {
         })
       );
     },
-    [setSources, sources]
+    [setSources]
   );
 
   const updateSourceMeta = React.useCallback(
     (id: string, patch: Partial<SubscriptionSource>) => {
+      const { sources } = useConfigStore.getState();
       setSources(
         sources.map((source) => {
           if (source.id !== id) return source;
@@ -217,20 +214,22 @@ export function useSubscriptionSourcesController({ mode }: Options) {
         })
       );
     },
-    [setSources, sources]
+    [setSources]
   );
 
   const moveSource = React.useCallback(
     (sourceId: string, direction: "up" | "down" | number) => {
+      const { sources } = useConfigStore.getState();
       const nextSources = moveSubscriptionSource(sources, sourceId, direction);
       if (nextSources === sources) return;
       setSources(nextSources);
     },
-    [setSources, sources]
+    [setSources]
   );
 
   const updateSourceType = React.useCallback(
     (id: string, type: SourceType) => {
+      const { sources } = useConfigStore.getState();
       const current = sources.find((source) => source.id === id);
       if (!current || current.type === type) return;
 
@@ -265,11 +264,12 @@ export function useSubscriptionSourcesController({ mode }: Options) {
         })
       );
     },
-    [maxSourcesPerType, setSources, sources, user]
+    [maxSourcesPerType, setSources, user]
   );
 
   const handleImportSource = React.useCallback(
     async (sourceId: string) => {
+      const { sources } = useConfigStore.getState();
       const source = sources.find((item) => item.id === sourceId);
       if (!source || !source.content.trim() || source.parsing) return;
 
@@ -291,7 +291,7 @@ export function useSubscriptionSourcesController({ mode }: Options) {
         usesProxyProvider: Boolean(latestSource.useProxyProviders),
       });
     },
-    [interactions, mode, parseSingleSource, sources]
+    [interactions, mode, parseSingleSource]
   );
 
   return {
@@ -306,7 +306,7 @@ export function useSubscriptionSourcesController({ mode }: Options) {
     nodeCount,
     nodesBySourceId,
     removeSource,
-    setExpandedSourceId,
+    openSourceEditor,
     setShowAddMenu,
     showAddMenu,
     sources,

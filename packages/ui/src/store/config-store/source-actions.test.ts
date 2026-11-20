@@ -31,6 +31,28 @@ function deferred<T>() {
 describe("createSourceActions", () => {
   beforeEach(resetSourceActionMocks);
 
+  it("adds empty unowned drafts without regenerating the existing YAML", () => {
+    const first = source({ id: "s1" });
+    const draft = source({ id: "s2", type: "nodes", content: "" });
+    const nodes = [node("Existing", { _sourceIds: ["s1"] })];
+    const { actions, getState, setAndGenerateConfig } = createHarness({ sources: [first], nodes });
+    actions.setSources([first, draft]);
+    expect(getState().sources).toEqual([first, draft]);
+    expect(getState().nodes).toBe(nodes);
+    expect(setAndGenerateConfig).not.toHaveBeenCalled();
+  });
+
+  it("still regenerates for a prepopulated provider or a newly recognized node owner", () => {
+    const first = source({ id: "s1" });
+    const draft = source({ id: "s2", type: "url", content: "" });
+    const owned = createHarness({ sources: [first], nodes: [node("Owned", { _sourceIds: ["s2"] })] });
+    owned.actions.setSources([first, draft]);
+    expect(owned.setAndGenerateConfig).toHaveBeenCalledOnce();
+    const provider = createHarness({ sources: [first] });
+    provider.actions.setSources([first, { ...draft, content: "https://example.com/provider", useProxyProviders: true }]);
+    expect(provider.setAndGenerateConfig).toHaveBeenCalledOnce();
+  });
+
   it("rejects stale results when the fetch mode changes while importing", async () => {
     const pending = deferred<DeferredFetchResult>();
     mocks.fetchUrlContentInBrowser.mockReturnValueOnce(pending.promise);

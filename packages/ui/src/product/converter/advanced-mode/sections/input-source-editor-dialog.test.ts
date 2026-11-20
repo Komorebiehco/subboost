@@ -124,6 +124,7 @@ describe("InputSourceEditorDialog", () => {
   it("edits URL source metadata and proxy-provider options", () => {
     const { html, handlers } = renderDialog();
 
+    expect(html).toContain('data-source-editor=""');
     expect(html).toContain("高级编辑：订阅链接");
     expect(html).toContain("proxy-providers模式");
     expect(html).toContain("proxy-providers 模式");

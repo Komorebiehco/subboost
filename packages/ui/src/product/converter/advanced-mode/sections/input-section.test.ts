@@ -269,7 +269,7 @@ describe("advanced mode InputSection", () => {
   });
 
   it("renders source summaries, errors, add controls, and the expanded editor", () => {
-    renderSection({ 0: true, 1: "s1" });
+    renderSection({ 0: true, 1: { id: "s1" } });
 
     expect(mocks.captures.header).toEqual(expect.objectContaining({ title: "节点导入", isExpanded: true }));
     expect(mocks.captures.errorBadge).toEqual(expect.objectContaining({ errorMessage: "parse failed" }));
@@ -285,7 +285,7 @@ describe("advanced mode InputSection", () => {
   });
 
   it("updates source content and metadata through captured fields", () => {
-    renderSection({ 1: "s1" });
+    renderSection({ 1: { id: "s1" } });
 
     const mainUrlInput = mocks.captures.inputs.find((props: any) => props.placeholder === "https://example.com/sub");
     mainUrlInput.onChange({ target: { value: "https://new.example/sub" } });
@@ -317,8 +317,7 @@ describe("advanced mode InputSection", () => {
 
   it("closes the editor and re-imports only changed sources", () => {
     renderSection({
-      1: "s1",
-      2: {
+      1: {
         id: "s1",
         content: "old",
         tag: "OLD",
@@ -337,8 +336,7 @@ describe("advanced mode InputSection", () => {
 
     mocks.store.parseSingleSource.mockClear();
     renderSection({
-      1: "s1",
-      2: {
+      1: {
         id: "s1",
         content: urlSource.content,
         tag: "HK",
@@ -354,20 +352,21 @@ describe("advanced mode InputSection", () => {
     expect(mocks.store.parseSingleSource).not.toHaveBeenCalled();
   });
 
-  it("runs source initialization and editor snapshot effects", () => {
+  it("initializes empty sources without a second state update to open the editor", () => {
     stateMock.runEffects = true;
     mocks.store.sources = [];
     renderSection();
     expect(mocks.store.setSources).toHaveBeenCalledWith([
       { id: "1", type: "url", content: "", nameTemplate: "[{tag}] {name}" },
     ]);
-    expect(stateMock.setters[2]).toHaveBeenCalledWith(null);
+    expect(stateMock.setters[1]).not.toHaveBeenCalled();
 
     mocks.store.setSources.mockClear();
     mocks.store.sources = [urlSource];
-    renderSection({ 1: "s1" });
+    renderSection();
     expect(mocks.store.setSources).not.toHaveBeenCalled();
-    expect((stateMock.setters[2] as any).lastValue).toEqual({
+    mocks.captures.iconButtons.find((props: any) => props.label === "高级编辑").onClick();
+    expect((stateMock.setters[1] as any).lastValue).toEqual({
       id: "s1",
       content: "https://example.com/sub",
       tag: "HK",
@@ -381,9 +380,9 @@ describe("advanced mode InputSection", () => {
       userinfoUserAgent: "clash",
     });
 
-    const existingSnapshot = { id: "s1", content: "same", tag: "", nameTemplate: "", useProxyProviders: false, sourceUserAgent: "", proxyProviderUserAgent: "", userinfoUrl: "", userinfoUserAgent: "" };
-    renderSection({ 1: "s1", 2: existingSnapshot });
-    expect((stateMock.setters[2] as any).lastValue).toBe(existingSnapshot);
+    const existingSnapshot = (stateMock.setters[1] as any).lastValue;
+    renderSection({ 1: existingSnapshot });
+    expect(stateMock.setters[1]).not.toHaveBeenCalled();
 
     mocks.store.sources = [
       {
@@ -394,8 +393,9 @@ describe("advanced mode InputSection", () => {
         nodeCount: 1,
       },
     ];
-    renderSection({ 1: "s3" });
-    expect((stateMock.setters[2] as any).lastValue).toEqual({
+    renderSection();
+    mocks.captures.iconButtons.find((props: any) => props.label === "高级编辑").onClick();
+    expect((stateMock.setters[1] as any).lastValue).toEqual({
       id: "s3",
       content: "https://missing-meta.example/sub",
       tag: "",
@@ -517,7 +517,7 @@ describe("advanced mode InputSection", () => {
     expect(mocks.moveSubscriptionSource).toHaveBeenCalledWith(mocks.store.sources, "s2", "up");
 
     mocks.captures.iconButtons.find((props: any) => props.label === "高级编辑").onClick();
-    expect(stateMock.setters[1]).toHaveBeenCalledWith(expect.any(String));
+    expect(stateMock.setters[1]).toHaveBeenCalledWith(expect.objectContaining({ id: "s1", content: urlSource.content }));
 
     mocks.store.setSources.mockClear();
     mocks.captures.iconButtons.find((props: any) => props.label === "删除导入源").onClick();

@@ -283,7 +283,7 @@ describe("quick mode SourcesSection", () => {
   });
 
   it("renders source status, errors, add controls, and the expanded editor", () => {
-    renderSection({ 0: true, 1: "s1" });
+    renderSection({ 0: true, 1: { id: "s1" } });
 
     expect(mocks.captures.errorBadge).toEqual(expect.objectContaining({ errorMessage: "parse failed" }));
     expect(mocks.captures.editor).toEqual(expect.objectContaining({ source: urlSource }));
@@ -292,7 +292,7 @@ describe("quick mode SourcesSection", () => {
   });
 
   it("updates source content and metadata through the shared editor contract", () => {
-    renderSection({ 1: "s1" });
+    renderSection({ 1: { id: "s1" } });
 
     mocks.captures.editor.onUpdateContent("s1", "https://new.example/sub");
     expect(mocks.store.setSources).toHaveBeenCalledWith(expect.any(Array));
@@ -322,8 +322,7 @@ describe("quick mode SourcesSection", () => {
 
   it("closes the expanded editor and triggers re-import only when metadata changed", () => {
     renderSection({
-      1: "s1",
-      2: {
+      1: {
         id: "s1",
         content: "old",
         tag: "OLD",
@@ -342,8 +341,7 @@ describe("quick mode SourcesSection", () => {
 
     mocks.store.parseSingleSource.mockClear();
     renderSection({
-      1: "s1",
-      2: {
+      1: {
         id: "s1",
         content: urlSource.content,
         tag: "HK",
@@ -484,7 +482,7 @@ describe("quick mode SourcesSection", () => {
   });
 
   it("renders and edits non-url expanded sources", () => {
-    renderSection({ 1: "s2" });
+    renderSection({ 1: { id: "s2" } });
 
     expect(mocks.captures.editor.source).toEqual(textSource);
     mocks.captures.editor.onUpdateContent("s2", "vmess://node");
@@ -537,7 +535,7 @@ describe("quick mode SourcesSection", () => {
     mocks.captures.iconButtons.find((props: any) => props.label === "下移" && !props.disabled).onClick();
     expect(mocks.store.setSources).not.toHaveBeenCalled();
 
-    renderSection({ 1: "s1" });
+    renderSection({ 1: { id: "s1" } });
     mocks.markSourceAsPendingImport.mockClear();
     mocks.captures.editor.onUpdateMeta("s1", { tag: "HK" });
     expect(mocks.markSourceAsPendingImport).not.toHaveBeenCalled();
@@ -573,8 +571,7 @@ describe("quick mode SourcesSection", () => {
   it("does not re-import a parsing expanded source on close", () => {
     mocks.store.sources = [{ ...urlSource, parsing: true }];
     renderSection({
-      1: "s1",
-      2: {
+      1: {
         id: "s1",
         content: "old",
         tag: "OLD",
@@ -588,5 +585,26 @@ describe("quick mode SourcesSection", () => {
     mocks.captures.editor.onClose();
     expect(mocks.store.parseSingleSource).not.toHaveBeenCalled();
     expect(stateMock.setters[1]).toHaveBeenCalledWith(null);
+  });
+
+  it("opens the latest pasted draft immediately and only re-imports edits to the opened source", () => {
+    renderSection();
+    const open = mocks.captures.iconButtons.filter((props: any) => props.label === "高级编辑");
+    const newText = "ss://first\nss://second";
+    mocks.store.setSources.mockImplementation((sources: unknown[]) => { mocks.store.sources = sources; });
+    mocks.captures.textareas[0].onChange({ target: { value: newText } });
+    open[0].onClick();
+    open[1].onClick();
+    const snapshot = (stateMock.setters[1] as any).lastValue;
+    expect(snapshot).toMatchObject({ id: "s2", content: newText });
+    renderSection({ 1: snapshot });
+    const editor = mocks.captures.editor;
+    expect(editor.source.content).toBe(newText);
+    editor.onClose();
+    expect(mocks.store.parseSingleSource).not.toHaveBeenCalled();
+    renderSection({ 1: snapshot });
+    mocks.captures.editor.onUpdateContent("s2", "ss://final");
+    mocks.captures.editor.onClose();
+    expect(mocks.store.parseSingleSource.mock.calls).toEqual([["s2"]]);
   });
 });

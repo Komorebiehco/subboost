@@ -77,6 +77,14 @@
   html body[data-scroll-locked] .width-before-scroll-bar {
     margin-right: var(--removed-body-scroll-bar-size) !important;
   }
+
+  /* The portaled source dialog's full-screen overlay handles pointer input.
+     Keep the covered panels in their own stacking contexts so their thousands
+     of descendants don't inherit a different pointer-events value on open. */
+  body:has(> [data-source-editor][data-state="open"]) :is(#config, #preview) {
+    isolation: isolate;
+    pointer-events: auto;
+  }
 }
 
 /* 自定义滚动条 */
