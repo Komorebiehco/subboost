@@ -89,6 +89,9 @@ export function useSubscriptionSourcesController({ mode }: Options) {
   const [expandedSourceSnapshot, setExpandedSourceSnapshot] = React.useState<ExpandedSourceSnapshot | null>(null);
   const expandedSource = expandedSourceSnapshot
     ? sources.find((source) => source.id === expandedSourceSnapshot.id) ?? null : null;
+  // The covered field need not rewrite a large draft while the dialog is editing it.
+  const getInlineSourceContent = (source: SubscriptionSource) =>
+    expandedSourceSnapshot?.id === source.id ? expandedSourceSnapshot.content : source.content;
   const openSourceEditor = React.useCallback((sourceId: string) => {
     const source = useConfigStore.getState().sources.find((item) => item.id === sourceId);
     if (source) setExpandedSourceSnapshot(createExpandedSourceSnapshot(source));
@@ -300,6 +303,7 @@ export function useSubscriptionSourcesController({ mode }: Options) {
     error,
     expandedSource,
     expandedSourcePreviewName,
+    getInlineSourceContent,
     handleImportSource,
     maxSourcesPerType,
     moveSource,

@@ -40,6 +40,7 @@ export function InputSection({
             <SourceRow
               key={source.id}
               source={source}
+              inputContent={editor.getInlineSourceContent(source)}
               typeInfo={sourceTypeInfo[source.type]}
               nodes={editor.nodesBySourceId.get(source.id)}
               position={index + 1}

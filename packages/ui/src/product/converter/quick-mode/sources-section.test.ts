@@ -587,6 +587,35 @@ describe("quick mode SourcesSection", () => {
     expect(stateMock.setters[1]).toHaveBeenCalledWith(null);
   });
 
+  it("keeps dialog edits current while delaying only the covered quick-mode field", () => {
+    mocks.store.setSources.mockImplementation((sources: unknown[]) => { mocks.store.sources = sources; });
+    renderSection();
+    mocks.captures.iconButtons.filter((props: any) => props.label === "高级编辑")[1].onClick();
+    const snapshot = (stateMock.setters[1] as any).lastValue;
+    renderSection({ 1: snapshot });
+    const draft = "trojan://latest\n".repeat(1800);
+    mocks.captures.editor.onUpdateContent("s2", draft);
+    renderSection({ 1: snapshot });
+    expect(mocks.captures.editor.source.content).toBe(draft);
+    expect(mocks.captures.textareas[0].value).toBe(textSource.content);
+    mocks.captures.editor.onClose();
+    expect(mocks.store.parseSingleSource.mock.calls).toEqual([["s2"]]);
+    renderSection();
+    expect(mocks.captures.textareas[0].value).toBe(draft);
+
+    mocks.captures.iconButtons.filter((props: any) => props.label === "高级编辑")[1].onClick();
+    const reopened = (stateMock.setters[1] as any).lastValue;
+    renderSection({ 1: reopened });
+    expect(mocks.captures.editor.source.content).toBe(draft);
+    mocks.captures.editor.onUpdateContent("s2", "");
+    renderSection({ 1: reopened });
+    expect(mocks.captures.editor.source.content).toBe("");
+    expect(mocks.captures.textareas[0].value).toBe(draft);
+    mocks.captures.editor.onClose();
+    renderSection();
+    expect(mocks.captures.textareas[0].value).toBe("");
+  });
+
   it("opens the latest pasted draft immediately and only re-imports edits to the opened source", () => {
     renderSection();
     const open = mocks.captures.iconButtons.filter((props: any) => props.label === "高级编辑");

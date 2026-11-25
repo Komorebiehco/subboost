@@ -578,6 +578,37 @@ describe("advanced mode InputSection", () => {
     expect(mocks.interactions.sourceImported).toHaveBeenCalledWith(expect.objectContaining({ result: "runtimeError" }));
   });
 
+  it.each(["", "ss://before"])("keeps the covered field stable until closing, starting with %s", (initial) => {
+    mocks.store.sources = [urlSource, { ...nodesSource, content: initial }];
+    mocks.store.setSources.mockImplementation((sources: unknown[]) => { mocks.store.sources = sources; });
+    renderSection();
+    mocks.captures.iconButtons.filter((props: any) => props.label === "高级编辑")[1].onClick();
+    const snapshot = (stateMock.setters[1] as any).lastValue;
+    renderSection({ 1: snapshot });
+    const draft = "trojan://latest\n".repeat(1800);
+    mocks.captures.editor.onUpdateContent("s2", draft);
+    renderSection({ 1: snapshot });
+    expect(mocks.captures.editor.source.content).toBe(draft);
+    expect(mocks.captures.textareas[0].value).toBe(initial);
+    expect(mocks.store.sources[1].content).toBe(draft);
+
+    // Close must read the latest store even before another component render.
+    mocks.captures.editor.onUpdateContent("s2", `${draft}ss://last`);
+    mocks.captures.editor.onClose();
+    expect(mocks.store.parseSingleSource.mock.calls).toEqual([["s2"]]);
+    renderSection();
+    expect(mocks.captures.textareas[0].value).toBe(`${draft}ss://last`);
+    mocks.captures.iconButtons.filter((props: any) => props.label === "高级编辑")[1].onClick();
+    renderSection({ 1: (stateMock.setters[1] as any).lastValue });
+    expect(mocks.captures.editor.source.content).toBe(`${draft}ss://last`);
+    mocks.captures.editor.onClose();
+    expect(mocks.store.parseSingleSource.mock.calls).toEqual([["s2"]]);
+
+    renderSection({ 1: { ...snapshot, id: "s1", content: urlSource.content } });
+    expect(mocks.captures.textareas[0].value).toBe(`${draft}ss://last`);
+    expect(mocks.captures.editor.source.id).toBe("s1");
+  });
+
   it("renders collapsed, empty, and anonymous states", () => {
     renderSection({}, { isExpanded: false, onToggle: vi.fn() });
     expect(mocks.captures.header).toEqual(expect.objectContaining({ isExpanded: false }));

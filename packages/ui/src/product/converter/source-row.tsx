@@ -20,6 +20,7 @@ type RowActions = Pick<ReturnType<typeof useSubscriptionSourcesController>,
 
 type Props = RowActions & {
   source: SubscriptionSource;
+  inputContent?: string;
   typeInfo: SourceTypeInfo;
   nodes?: ParsedNode[];
   position: number;
@@ -31,14 +32,14 @@ const EMPTY_NODES: ParsedNode[] = [];
 const arrowClass = "flex h-3.5 w-4 items-center justify-center text-white/30 transition-colors hover:text-indigo-300 disabled:cursor-not-allowed disabled:opacity-30";
 
 export const SourceRow = memo(function SourceRow({
-  source, typeInfo, nodes = EMPTY_NODES, position, total, compact = false,
+  source, inputContent = source.content, typeInfo, nodes = EMPTY_NODES, position, total, compact = false,
   updateSourceType, moveSource, openSourceEditor, handleImportSource, removeSource, updateSource,
 }: Props) {
   const label = buildSourceDisplayLabel({ typeLabel: typeInfo.label, tag: source.tag, order: position, total });
   const hasContent = Boolean(source.content.trim());
   const importLabel = source.parsing ? "导入中" : source.parsed ? "重新导入" : "导入此源";
   const contentProps = {
-    value: source.content, placeholder: typeInfo.placeholder, spellCheck: false, autoCapitalize: "none",
+    value: inputContent, placeholder: typeInfo.placeholder, spellCheck: false, autoCapitalize: "none",
     onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => updateSource(source.id, event.target.value),
   };
   return (
